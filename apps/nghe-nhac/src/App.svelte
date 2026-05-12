@@ -13,9 +13,25 @@
   let showEQ = false;
   let playlist: File[] = [];
 
-  // EQ state
-  let bass = 0; // Range: -15 to 15
-  let treble = 0; // Range: -15 to 15
+  // EQ state (5-band graphic equalizer)
+  let eqBands = [
+    { freq: 60, gain: 0, label: '60Hz' },
+    { freq: 250, gain: 0, label: '250Hz' },
+    { freq: 1000, gain: 0, label: '1KHz' },
+    { freq: 4000, gain: 0, label: '4KHz' },
+    { freq: 12000, gain: 0, label: '12KHz' }
+  ];
+  let eqFilters: BiquadFilterNode[] = [];
+  
+  const eqPresets: Record<string, number[]> = {
+    'Mặc định': [0, 0, 0, 0, 0],
+    'Bass Boost': [8, 5, 0, -1, -2],
+    'Acoustic': [2, 1, 3, 4, 5],
+    'Pop': [-2, 2, 4, 2, -1],
+    'Rock': [5, 3, -1, 4, 5],
+    'Classical': [0, 0, 0, 3, 3]
+  };
+  let activePreset = 'Mặc định';
 
   // Database helper for saving File objects
   const DB_NAME = 'LinhHuongMusicDB';
@@ -46,14 +62,13 @@
   }
 
   function saveConfig() {
-    localStorage.setItem('lh_music_config', JSON.stringify({ bass, treble, volume }));
+    const gains = eqBands.map(b => b.gain);
+    localStorage.setItem('lh_music_config', JSON.stringify({ eq: gains, volume, activePreset }));
   }
 
   // Web Audio API
   let audioContext: AudioContext;
   let sourceNode: MediaElementAudioSourceNode;
-  let bassFilter: BiquadFilterNode;
-  let trebleFilter: BiquadFilterNode;
   let analyser: AnalyserNode;
   let audioInitialized = false;
   let animationId: number;
@@ -70,23 +85,26 @@
 
     sourceNode = audioContext.createMediaElementSource(audioPlayer);
     
-    bassFilter = audioContext.createBiquadFilter();
-    bassFilter.type = 'lowshelf';
-    bassFilter.frequency.value = 250;
-    bassFilter.gain.value = bass;
-
-    trebleFilter = audioContext.createBiquadFilter();
-    trebleFilter.type = 'highshelf';
-    trebleFilter.frequency.value = 4000;
-    trebleFilter.gain.value = treble;
+    // Create 5-band EQ filters
+    eqFilters = eqBands.map(band => {
+      const filter = audioContext.createBiquadFilter();
+      filter.type = 'peaking'; // using peaking for graphic EQ
+      filter.frequency.value = band.freq;
+      filter.Q.value = 1.0;
+      filter.gain.value = band.gain;
+      return filter;
+    });
 
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
     analyser.smoothingTimeConstant = 0.8;
 
-    sourceNode.connect(bassFilter);
-    bassFilter.connect(trebleFilter);
-    trebleFilter.connect(analyser);
+    // Connect filters in series
+    sourceNode.connect(eqFilters[0]);
+    for (let i = 0; i < eqFilters.length - 1; i++) {
+      eqFilters[i].connect(eqFilters[i + 1]);
+    }
+    eqFilters[eqFilters.length - 1].connect(analyser);
     analyser.connect(audioContext.destination);
     
     audioInitialized = true;
@@ -174,14 +192,24 @@
     isPlaying = !isPlaying;
   }
 
-  function updateBass() {
-    if (bassFilter) bassFilter.gain.value = bass;
+  function updateEQ(index: number) {
+    if (eqFilters[index]) {
+      eqFilters[index].gain.value = eqBands[index].gain;
+    }
+    activePreset = 'Tùy chỉnh';
     saveConfig();
   }
 
-  function updateTreble() {
-    if (trebleFilter) trebleFilter.gain.value = treble;
-    saveConfig();
+  function applyPreset(presetName: string) {
+    if (eqPresets[presetName]) {
+      activePreset = presetName;
+      const gains = eqPresets[presetName];
+      for (let i = 0; i < eqBands.length; i++) {
+        eqBands[i].gain = gains[i];
+        if (eqFilters[i]) eqFilters[i].gain.value = gains[i];
+      }
+      saveConfig();
+    }
   }
 
   function handleTimeUpdate() {
@@ -268,9 +296,13 @@
     if (config) {
       try {
         const parsed = JSON.parse(config);
-        bass = parsed.bass || 0;
-        treble = parsed.treble || 0;
         volume = parsed.volume !== undefined ? parsed.volume : 1;
+        if (parsed.activePreset) activePreset = parsed.activePreset;
+        if (parsed.eq && Array.isArray(parsed.eq)) {
+          for (let i = 0; i < Math.min(parsed.eq.length, eqBands.length); i++) {
+            eqBands[i].gain = parsed.eq[i];
+          }
+        }
       } catch (e) {}
     }
     
@@ -369,35 +401,52 @@
   <!-- EQ Panel Overlay -->
   {#if showEQ}
     <div class="absolute bottom-40 left-1/2 -translate-x-1/2 bg-zinc-900/80 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 z-30 shadow-[0_30px_60px_rgba(0,0,0,0.6)] w-80 animate-fade-in-up">
-      <div class="flex justify-between items-center mb-6">
+      <div class="flex justify-between items-center mb-5">
         <h3 class="font-bold text-sm text-white tracking-widest uppercase flex items-center gap-2">
           <svg class="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-          Equalizer
+          Master Equalizer
         </h3>
         <button on:click={() => showEQ = false} class="text-zinc-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-full">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
+
+      <!-- Presets -->
+      <div class="mb-6">
+        <div class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2 font-bold">Chế độ tối ưu</div>
+        <div class="flex flex-wrap gap-2">
+          {#each Object.keys(eqPresets) as presetName}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div class="px-2 py-1 text-xs rounded border cursor-pointer transition-colors {activePreset === presetName ? 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-200' : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}" on:click={() => applyPreset(presetName)}>
+              {presetName}
+            </div>
+          {/each}
+          {#if activePreset === 'Tùy chỉnh'}
+            <div class="px-2 py-1 text-xs rounded border cursor-pointer transition-colors bg-cyan-500/20 border-cyan-500/50 text-cyan-200">
+              Tùy chỉnh
+            </div>
+          {/if}
+        </div>
+      </div>
       
-      <div class="space-y-6">
-        <div>
-          <div class="flex justify-between text-xs text-zinc-400 mb-2 font-semibold tracking-wide">
-            <span>BASS</span>
-            <span class={bass > 0 ? 'text-fuchsia-400' : bass < 0 ? 'text-zinc-500' : 'text-zinc-300'}>{bass > 0 ? '+'+bass : bass} dB</span>
+      <!-- Graphic EQ Sliders -->
+      <div class="space-y-4">
+        {#each eqBands as band, index}
+          <div class="relative group">
+            <div class="flex justify-between text-[11px] text-zinc-400 mb-1.5 font-bold tracking-wide">
+              <span>{band.label}</span>
+              <span class={band.gain > 0 ? 'text-fuchsia-400' : band.gain < 0 ? 'text-zinc-500' : 'text-zinc-300'}>{band.gain > 0 ? '+'+band.gain : band.gain} dB</span>
+            </div>
+            <input type="range" min="-15" max="15" step="1" bind:value={band.gain} on:input={() => updateEQ(index)} class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-fuchsia-500 group-hover:accent-fuchsia-400 transition-colors" />
           </div>
-          <input type="range" min="-15" max="15" step="1" bind:value={bass} on:input={updateBass} class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-fuchsia-500" />
-        </div>
+        {/each}
         
-        <div>
-          <div class="flex justify-between text-xs text-zinc-400 mb-2 font-semibold tracking-wide">
-            <span>TREBLE</span>
-            <span class={treble > 0 ? 'text-cyan-400' : treble < 0 ? 'text-zinc-500' : 'text-zinc-300'}>{treble > 0 ? '+'+treble : treble} dB</span>
-          </div>
-          <input type="range" min="-15" max="15" step="1" bind:value={treble} on:input={updateTreble} class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400" />
-        </div>
-        
-        <div class="pt-2">
-          <button class="w-full text-xs font-semibold bg-white/5 hover:bg-white/10 py-2.5 rounded-xl text-zinc-300 transition-all active:scale-95" on:click={() => {bass=0; treble=0; updateBass(); updateTreble();}}>Khôi phục mặc định</button>
+        <div class="pt-3">
+          <button class="w-full text-xs font-semibold bg-white/5 hover:bg-white/10 py-2.5 rounded-xl text-zinc-300 transition-all active:scale-95 flex justify-center items-center gap-2" on:click={() => applyPreset('Mặc định')}>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Khôi phục mặc định
+          </button>
         </div>
       </div>
     </div>
