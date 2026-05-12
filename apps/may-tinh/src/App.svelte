@@ -3,29 +3,77 @@
   let result = '';
   let steps: string[] = [];
 
+  function evaluateStepByStep(expr: string): { result: string, log: string[] } {
+    let log: string[] = [];
+    // Remove spaces
+    let current = expr.replace(/\s+/g, '');
+    
+    // Function to calculate a simple binary operation
+    const calc = (a: number, op: string, b: number) => {
+      switch (op) {
+        case '*': return a * b;
+        case '/': return b === 0 ? NaN : a / b;
+        case '+': return a + b;
+        case '-': return a - b;
+        default: return 0;
+      }
+    };
+
+    // Regex for finding innermost parentheses
+    const parenRegex = /\(([^()]+)\)/;
+    // Regex for finding multiplication/division
+    const mulDivRegex = /(-?\d+\.?\d*)([\*\/])(-?\d+\.?\d*)/;
+    // Regex for finding addition/subtraction
+    const addSubRegex = /(-?\d+\.?\d*)([\+\-])(-?\d+\.?\d*)/;
+
+    let stepCount = 1;
+    let maxIterations = 100;
+
+    while (isNaN(Number(current)) && maxIterations > 0) {
+      maxIterations--;
+      let match;
+      
+      if ((match = parenRegex.exec(current)) !== null) {
+        let inside = match[1];
+        let subRes = evaluateStepByStep(inside);
+        log.push(...subRes.log);
+        current = current.replace(match[0], subRes.result);
+        log.push(`Bỏ ngoặc: ${current}`);
+      } else if ((match = mulDivRegex.exec(current)) !== null) {
+        let res = calc(parseFloat(match[1]), match[2], parseFloat(match[3]));
+        current = current.replace(match[0], res.toString());
+        log.push(`Thực hiện phép ${match[2] === '*' ? 'nhân' : 'chia'}: ${match[0]} = ${res} \n => ${current}`);
+      } else if ((match = addSubRegex.exec(current)) !== null) {
+        // Prevent matching negative numbers at the start as an operation
+        if (match.index === 0 && match[1] === '') {
+          // It's just a negative number
+          break;
+        }
+        let res = calc(parseFloat(match[1]), match[2], parseFloat(match[3]));
+        current = current.replace(match[0], res.toString());
+        log.push(`Thực hiện phép ${match[2] === '+' ? 'cộng' : 'trừ'}: ${match[0]} = ${res} \n => ${current}`);
+      } else {
+        break;
+      }
+    }
+    
+    if (isNaN(Number(current))) throw new Error("Invalid expression");
+    return { result: current, log };
+  }
+
   function solve() {
     if (!expression.trim()) return;
     
     steps = [];
-    steps.push(`Biểu thức: ${expression}`);
+    steps.push(`Biểu thức gốc: ${expression}`);
     
     try {
-      // Basic math parsing logic for educational step-by-step
-      // (This is a mock step-by-step generator for educational purposes)
-      let currentExpr = expression.replace(/\s+/g, '');
+      const res = evaluateStepByStep(expression);
+      steps.push(...res.log);
       
-      // Handle simple multiplication first
-      if (currentExpr.includes('*')) {
-        steps.push(`Thực hiện phép nhân trước theo thứ tự ưu tiên.`);
-      }
-      
-      // Evaluate
-      // Note: In a real educational app, we would parse AST and show exact steps.
-      // Here we just use a safe fallback or eval for basic demonstration.
-      const fn = new Function(`return ${currentExpr}`);
-      const finalResult = fn();
-      
-      result = String(finalResult);
+      let finalNum = parseFloat(res.result);
+      // Format to max 4 decimal places to avoid floating point issues
+      result = String(Math.round(finalNum * 10000) / 10000);
       steps.push(`Kết quả cuối cùng: ${result}`);
     } catch (e) {
       result = 'Lỗi cú pháp';
