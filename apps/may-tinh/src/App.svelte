@@ -6,7 +6,10 @@
 
   // Formula state
   let a = ''; let b = ''; let c = '';
-  let formulaType = 'ptb2'; // ptb2, pytago, circle
+  let a1 = ''; let b1 = ''; let c1 = '';
+  let a2 = ''; let b2 = ''; let c2 = '';
+  let angle = '';
+  let formulaType = 'ptb2'; // ptb2, pytago, circle, ptb1, hpt2, triangle, trig
 
   function evaluateStepByStep(expr: string): { result: string, log: string[] } {
     let log: string[] = [];
@@ -125,11 +128,86 @@
       steps.push(`3. Tính Diện tích (S): S = π * R²`);
       steps.push(`S ≈ 3.14159 * (${valA})² = ${Math.round(dienTich*100)/100}`);
       result = `C=${Math.round(chuVi*100)/100}, S=${Math.round(dienTich*100)/100}`;
+    } else if (formulaType === 'ptb1') {
+      steps.push(`1. Phân tích Phương trình bậc 1: ${valA}x + ${valB} = 0`);
+      if (valA === 0) {
+        if (valB === 0) {
+          result = "Vô số nghiệm";
+          steps.push(`Vì a = 0 và b = 0, phương trình có vô số nghiệm.`);
+        } else {
+          result = "Vô nghiệm";
+          steps.push(`Vì a = 0 và b ≠ 0, phương trình vô nghiệm.`);
+        }
+      } else {
+        let x = -valB / valA;
+        result = `x = ${Math.round(x*100)/100}`;
+        steps.push(`2. Chuyển vế: ${valA}x = ${-valB}`);
+        steps.push(`3. Chia 2 vế cho a: x = ${-valB} / ${valA} = ${result}`);
+      }
+    } else if (formulaType === 'hpt2') {
+      let vA1 = parseFloat(a1)||0; let vB1 = parseFloat(b1)||0; let vC1 = parseFloat(c1)||0;
+      let vA2 = parseFloat(a2)||0; let vB2 = parseFloat(b2)||0; let vC2 = parseFloat(c2)||0;
+      steps.push(`1. Hệ phương trình 2 ẩn:`);
+      steps.push(`   { ${vA1}x + ${vB1}y = ${vC1}`);
+      steps.push(`   { ${vA2}x + ${vB2}y = ${vC2}`);
+      steps.push(`2. Giải bằng phương pháp định thức (Cramer):`);
+      let D = vA1 * vB2 - vA2 * vB1;
+      let Dx = vC1 * vB2 - vC2 * vB1;
+      let Dy = vA1 * vC2 - vA2 * vC1;
+      steps.push(`   D  = a1.b2 - a2.b1 = (${vA1})*(${vB2}) - (${vA2})*(${vB1}) = ${D}`);
+      steps.push(`   Dx = c1.b2 - c2.b1 = (${vC1})*(${vB2}) - (${vC2})*(${vB1}) = ${Dx}`);
+      steps.push(`   Dy = a1.c2 - a2.c1 = (${vA1})*(${vC2}) - (${vA2})*(${vC1}) = ${Dy}`);
+      if (D !== 0) {
+        let x = Dx / D; let y = Dy / D;
+        result = `x=${Math.round(x*100)/100}, y=${Math.round(y*100)/100}`;
+        steps.push(`3. Hệ có nghiệm duy nhất:`);
+        steps.push(`   x = Dx / D = ${Dx} / ${D} = ${Math.round(x*100)/100}`);
+        steps.push(`   y = Dy / D = ${Dy} / ${D} = ${Math.round(y*100)/100}`);
+      } else {
+        if (Dx === 0 && Dy === 0) {
+          result = "Vô số nghiệm";
+          steps.push(`3. Vì D = Dx = Dy = 0, hệ có vô số nghiệm.`);
+        } else {
+          result = "Vô nghiệm";
+          steps.push(`3. Vì D = 0 nhưng Dx hoặc Dy ≠ 0, hệ vô nghiệm.`);
+        }
+      }
+    } else if (formulaType === 'triangle') {
+      steps.push(`1. Diện tích tam giác bằng công thức Heron (biết 3 cạnh a, b, c)`);
+      if (valA + valB > valC && valA + valC > valB && valB + valC > valA) {
+        let p = (valA + valB + valC) / 2;
+        steps.push(`2. Tính nửa chu vi (p) = (a + b + c) / 2 = (${valA} + ${valB} + ${valC}) / 2 = ${p}`);
+        let s2 = p * (p - valA) * (p - valB) * (p - valC);
+        let s = Math.sqrt(s2);
+        result = `S = ${Math.round(s*100)/100}`;
+        steps.push(`3. Diện tích S = √(p(p-a)(p-b)(p-c))`);
+        steps.push(`   S = √(${p} * ${p - valA} * ${p - valB} * ${p - valC}) = √${s2}`);
+        steps.push(`   S ≈ ${Math.round(s*100)/100}`);
+      } else {
+        result = "Không tạo thành tam giác";
+        steps.push(`2. Tổng 2 cạnh bất kỳ phải lớn hơn cạnh còn lại. Bộ 3 số này không tạo thành tam giác hợp lệ!`);
+      }
+    } else if (formulaType === 'trig') {
+      let deg = parseFloat(angle) || 0;
+      steps.push(`1. Tính giá trị lượng giác của góc ${deg}°`);
+      let rad = deg * (Math.PI / 180);
+      steps.push(`2. Đổi sang Radian: ${deg}° = ${deg} * (π/180) ≈ ${Math.round(rad*1000)/1000} rad`);
+      let s = Math.sin(rad); let c = Math.cos(rad); let t = Math.tan(rad);
+      steps.push(`3. Giá trị Lượng giác:`);
+      steps.push(`   Sin(${deg}°) = ${Math.round(s*10000)/10000}`);
+      steps.push(`   Cos(${deg}°) = ${Math.round(c*10000)/10000}`);
+      if (Math.abs(c) < 1e-10) {
+        steps.push(`   Tan(${deg}°) = Không xác định`);
+        result = `sin=${Math.round(s*100)/100}, cos=0, tan=∞`;
+      } else {
+        steps.push(`   Tan(${deg}°) = ${Math.round(t*10000)/10000}`);
+        result = `s=${Math.round(s*100)/100}, c=${Math.round(c*100)/100}, t=${Math.round(t*100)/100}`;
+      }
     }
   }
 
   function append(char: string) { expression += char; }
-  function clear() { expression = ''; result = ''; steps = []; a=''; b=''; c=''; }
+  function clear() { expression = ''; result = ''; steps = []; a=''; b=''; c=''; a1=''; b1=''; c1=''; a2=''; b2=''; c2=''; angle=''; }
 </script>
 
 <div class="min-h-screen bg-slate-100 flex items-center justify-center p-6 font-sans">
@@ -160,7 +238,12 @@
             <div class="text-4xl font-bold text-right truncate font-mono text-white tracking-tight">{result || '0'}</div>
           {:else}
             <div class="text-emerald-100 text-sm text-center h-6 mb-1 font-semibold uppercase tracking-wider">
-              {formulaType === 'ptb2' ? 'Phương trình bậc 2' : formulaType === 'pytago' ? 'Định lý Pytago' : 'Hình tròn'}
+              {formulaType === 'ptb1' ? 'Phương trình bậc 1' : 
+               formulaType === 'ptb2' ? 'Phương trình bậc 2' : 
+               formulaType === 'hpt2' ? 'Hệ Phương Trình' : 
+               formulaType === 'triangle' ? 'Diện tích Tam Giác' : 
+               formulaType === 'trig' ? 'Lượng Giác' : 
+               formulaType === 'pytago' ? 'Định lý Pytago' : 'Hình tròn'}
             </div>
             <div class="text-2xl font-bold text-center truncate font-mono text-white tracking-tight mt-2">{result || '...'}</div>
           {/if}
@@ -193,31 +276,76 @@
       {:else}
       <div class="relative z-10 flex-1 flex flex-col gap-4">
         <select bind:value={formulaType} on:change={clear} class="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-3 outline-none focus:bg-white/20 transition-all font-medium appearance-none">
+          <option value="ptb1" class="text-slate-800">Phương trình bậc 1 (ax + b = 0)</option>
           <option value="ptb2" class="text-slate-800">Phương trình bậc 2 (ax² + bx + c = 0)</option>
+          <option value="hpt2" class="text-slate-800">Hệ phương trình 2 ẩn (a₁x+b₁y=c₁, a₂x+b₂y=c₂)</option>
           <option value="pytago" class="text-slate-800">Định lý Pytago (Tìm cạnh huyền)</option>
+          <option value="triangle" class="text-slate-800">Diện tích Tam giác (Heron)</option>
           <option value="circle" class="text-slate-800">Hình tròn (Chu vi & Diện tích)</option>
+          <option value="trig" class="text-slate-800">Lượng giác cơ bản (Sin, Cos, Tan)</option>
         </select>
 
-        <div class="bg-black/10 rounded-2xl p-5 border border-white/5 flex flex-col gap-4">
-          {#if formulaType === 'ptb2'}
+        <div class="bg-black/10 rounded-2xl p-4 border border-white/5 flex flex-col gap-3 overflow-y-auto max-h-[180px] custom-scrollbar">
+          {#if formulaType === 'ptb1'}
             <div class="flex items-center gap-3">
               <input type="number" bind:value={a} placeholder="a" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
-              <span class="text-xl font-bold">x² +</span>
-              <input type="number" bind:value={b} placeholder="b" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
               <span class="text-xl font-bold">x +</span>
-              <input type="number" bind:value={c} placeholder="c" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              <input type="number" bind:value={b} placeholder="b" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
               <span class="text-xl font-bold">= 0</span>
+            </div>
+          {:else if formulaType === 'ptb2'}
+            <div class="flex items-center gap-2">
+              <input type="number" bind:value={a} placeholder="a" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-lg p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              <span class="text-lg font-bold">x² +</span>
+              <input type="number" bind:value={b} placeholder="b" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-lg p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              <span class="text-lg font-bold">x +</span>
+              <input type="number" bind:value={c} placeholder="c" class="w-full bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-lg p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              <span class="text-lg font-bold">= 0</span>
+            </div>
+          {:else if formulaType === 'hpt2'}
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <input type="number" bind:value={a1} placeholder="a₁" class="w-16 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span>x +</span>
+                <input type="number" bind:value={b1} placeholder="b₁" class="w-16 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span>y =</span>
+                <input type="number" bind:value={c1} placeholder="c₁" class="w-16 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" bind:value={a2} placeholder="a₂" class="w-16 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span>x +</span>
+                <input type="number" bind:value={b2} placeholder="b₂" class="w-16 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span>y =</span>
+                <input type="number" bind:value={c2} placeholder="c₂" class="w-16 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              </div>
+            </div>
+          {:else if formulaType === 'triangle'}
+            <div class="flex flex-col items-center justify-center gap-2">
+              <span class="text-sm text-emerald-200">Nhập độ dài 3 cạnh a, b, c</span>
+              <div class="flex gap-2">
+                <input type="number" bind:value={a} placeholder="a" class="w-20 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-lg p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <input type="number" bind:value={b} placeholder="b" class="w-20 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-lg p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <input type="number" bind:value={c} placeholder="c" class="w-20 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-lg p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+              </div>
+            </div>
+          {:else if formulaType === 'trig'}
+             <div class="flex flex-col items-center justify-center gap-2 pt-2">
+              <span class="text-sm text-emerald-200 mb-1">Nhập Góc (Độ)</span>
+              <div class="flex items-end gap-2">
+                <input type="number" bind:value={angle} placeholder="VD: 90" class="w-32 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-3 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span class="text-2xl font-bold pb-2">°</span>
+              </div>
             </div>
           {:else if formulaType === 'pytago'}
             <div class="flex items-center justify-center gap-4">
               <div class="flex flex-col items-center">
-                <span class="text-sm text-emerald-200 mb-1">Cạnh góc vuông a</span>
-                <input type="number" bind:value={a} placeholder="Nhập a" class="w-24 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span class="text-sm text-emerald-200 mb-1">Cạnh vuông a</span>
+                <input type="number" bind:value={a} placeholder="a" class="w-24 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
               </div>
               <span class="text-2xl font-bold">+</span>
               <div class="flex flex-col items-center">
-                <span class="text-sm text-emerald-200 mb-1">Cạnh góc vuông b</span>
-                <input type="number" bind:value={b} placeholder="Nhập b" class="w-24 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
+                <span class="text-sm text-emerald-200 mb-1">Cạnh vuông b</span>
+                <input type="number" bind:value={b} placeholder="b" class="w-24 bg-white/10 border-b-2 border-emerald-300/50 text-white text-center text-xl p-2 outline-none focus:border-emerald-300 placeholder:text-white/30" />
               </div>
             </div>
           {:else if formulaType === 'circle'}
