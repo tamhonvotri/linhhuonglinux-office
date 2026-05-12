@@ -477,19 +477,19 @@
         <!-- Main Buttons -->
         <div class="flex items-center justify-center space-x-6 flex-1">
           <button class="text-zinc-400 hover:text-white hover:scale-110 active:scale-95 transition-all p-2" on:click={prevTrack}>
-            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"></path></svg>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7.75 4.5a.75.75 0 0 0-1.5 0v15a.75.75 0 0 0 1.5 0v-15Z" /><path fill-rule="evenodd" d="M20.25 4.938c0-1.37-1.493-2.222-2.656-1.5l-9.375 5.86a1.75 1.75 0 0 0 0 2.964l9.375 5.86c1.163.722 2.656-.13 2.656-1.5V4.938Z" clip-rule="evenodd" /></svg>
           </button>
           
           <button class="w-16 h-16 bg-white text-zinc-950 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]" on:click={togglePlay}>
             {#if isPlaying}
-              <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+              <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75h-1.5a.75.75 0 01-.75-.75V5.25z" clip-rule="evenodd"></path></svg>
             {:else}
-              <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+              <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"></path></svg>
             {/if}
           </button>
 
           <button class="text-zinc-400 hover:text-white hover:scale-110 active:scale-95 transition-all p-2" on:click={nextTrack}>
-            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"></path></svg>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.25 4.5a.75.75 0 0 1 1.5 0v15a.75.75 0 0 1-1.5 0v-15Z" /><path fill-rule="evenodd" d="M3.75 4.938c0-1.37 1.493-2.222 2.656-1.5l9.375 5.86a1.75 1.75 0 0 1 0 2.964l-9.375 5.86c-1.163.722-2.656-.13-2.656-1.5V4.938Z" clip-rule="evenodd" /></svg>
           </button>
         </div>
 
