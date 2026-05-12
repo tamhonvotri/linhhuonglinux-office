@@ -1,0 +1,39 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5175"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "productName": "Linh Hương Linux Plash Speed 4",
+  "mainBinaryName": "LinhHuongPlashSpeed",
+  "version": "0.1.0",
+  "identifier": "com.linhhuong.plashspeed",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Linh Hương Soạn Thảo",
+        "width": 1200,
+        "height": 800,
+        "useHttpsScheme": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

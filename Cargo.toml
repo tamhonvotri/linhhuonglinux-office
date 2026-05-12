@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "core/*",
+    "apps/document/src-tauri",
+    "apps/spreadsheet/src-tauri",
+    "apps/presentation/src-tauri"
+]
+resolver = "2"

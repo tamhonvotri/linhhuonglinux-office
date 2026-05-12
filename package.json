@@ -1,0 +1,29 @@
+{
+  "name": "linhhuong-office",
+  "version": "1.0.0",
+  "description": "Linh Huong Linux Office Workspace",
+  "private": true,
+  "scripts": {
+    "dev:soan-thao": "pnpm --filter soan-thao dev",
+    "dev:bang-tinh": "pnpm --filter bang-tinh dev",
+    "dev:trinh-chieu": "pnpm --filter trinh-chieu dev",
+    "dev:cong-thuc": "pnpm --filter cong-thuc dev",
+    "dev:may-tinh": "pnpm --filter may-tinh dev",
+    "dev:nghe-nhac": "pnpm --filter nghe-nhac dev",
+    "dev:phat-video": "pnpm --filter phat-video dev",
+    "dev:cua-hang": "pnpm --filter cua-hang dev",
+    "tauri:dev:soan-thao": "pnpm --filter soan-thao tauri dev",
+    "tauri:dev:bang-tinh": "pnpm --filter bang-tinh tauri dev",
+    "tauri:dev:trinh-chieu": "pnpm --filter trinh-chieu tauri dev",
+    "tauri:build": "pnpm -r tauri build",
+    "dev:ai": "pnpm --filter may-chu-ai dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "node-llama-cpp"
+    ]
+  }
+}

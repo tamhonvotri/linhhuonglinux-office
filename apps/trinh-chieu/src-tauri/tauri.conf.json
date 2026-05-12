@@ -1,0 +1,39 @@
+{
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5175"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "productName": "Linh Hương Trình Chiếu",
+  "mainBinaryName": "LinhHuongPresentation",
+  "version": "0.1.0",
+  "identifier": "com.linhhuong.presentation",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Linh Hương Trình Chiếu",
+        "width": 1200,
+        "height": 800,
+        "useHttpsScheme": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

@@ -1,0 +1,5 @@
+packages:
+  - 'apps/*'
+  - 'core/*'
+allowBuilds:
+  node-llama-cpp: set this to true or false

@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production Build Artifacts
+dist/
+dist-ssr/
+build/
+out/
+target/
+*.AppImage
+*.deb
+*.rpm
+*.snap
+release/
+
+# Tokens and Secrets (DO NOT PUSH)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.token
+*.key
+*.pem
+secrets.json
+auth.json
+
+# Software Production Plans (Internal)
+production-plan.md
+roadmap.md
+internal_plans/
+*.todo
+planning/
+
+# Tauri/Electron specific
+src-tauri/target/
+release-builds/
+
+# IDE and OS
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

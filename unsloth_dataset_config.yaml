@@ -1,0 +1,4 @@
+type: "alpaca"
+instruction: "instruction"
+input: "input"
+output: "output"
