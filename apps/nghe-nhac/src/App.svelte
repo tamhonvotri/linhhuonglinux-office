@@ -9,13 +9,44 @@
   let duration = 0;
   let currentTime = 0;
   let volume = 1;
-  let showPlaylist = false;
   let showEQ = false;
   let playlist: File[] = [];
 
   // EQ state
   let bass = 0; // Range: -15 to 15
   let treble = 0; // Range: -15 to 15
+
+  // Database helper for saving File objects
+  const DB_NAME = 'LinhHuongMusicDB';
+  const STORE_NAME = 'playlist_store';
+
+  function openDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function savePlaylistToDB() {
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(playlist, 'files');
+    } catch (e) {
+      console.error("Could not save playlist:", e);
+    }
+  }
+
+  function saveConfig() {
+    localStorage.setItem('lh_music_config', JSON.stringify({ bass, treble, volume }));
+  }
 
   // Web Audio API
   let audioContext: AudioContext;
@@ -104,9 +135,10 @@
   function handleFileSelect(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files) {
-      for (let i = 0; i < input.files.length; i++) {
-        playlist = [...playlist, input.files[i]];
-      }
+      const newFiles = Array.from(input.files);
+      playlist = [...playlist, ...newFiles];
+      savePlaylistToDB();
+      
       if (!currentFile && playlist.length > 0) {
         playFile(playlist[0]);
       }
@@ -143,10 +175,12 @@
 
   function updateBass() {
     if (bassFilter) bassFilter.gain.value = bass;
+    saveConfig();
   }
 
   function updateTreble() {
     if (trebleFilter) trebleFilter.gain.value = treble;
+    saveConfig();
   }
 
   function handleTimeUpdate() {
@@ -171,6 +205,7 @@
     const input = event.target as HTMLInputElement;
     volume = parseFloat(input.value);
     audioPlayer.volume = volume;
+    saveConfig();
   }
 
   function formatTime(seconds: number) {
@@ -200,11 +235,58 @@
     }
   }
   
-  onMount(() => {
+  function removeTrack(file: File, event: Event) {
+    event.stopPropagation();
+    const isCurrent = (currentFile === file);
+    playlist = playlist.filter(f => f !== file);
+    savePlaylistToDB();
+    
+    if (isCurrent) {
+      if (playlist.length > 0) {
+        playFile(playlist[0]);
+      } else {
+        audioPlayer.pause();
+        audioPlayer.src = '';
+        currentFile = null;
+        isPlaying = false;
+        currentTime = 0;
+        progress = 0;
+      }
+    }
+  }
+  
+  onMount(async () => {
     // Setup canvas sizing
     if (canvas) {
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
+    }
+    
+    // Load config
+    const config = localStorage.getItem('lh_music_config');
+    if (config) {
+      try {
+        const parsed = JSON.parse(config);
+        bass = parsed.bass || 0;
+        treble = parsed.treble || 0;
+        volume = parsed.volume !== undefined ? parsed.volume : 1;
+      } catch (e) {}
+    }
+    
+    // Load playlist
+    try {
+      const db = await openDB();
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get('files');
+      req.onsuccess = () => {
+        if (req.result && req.result.length > 0) {
+          playlist = req.result;
+          // Apply initial volume immediately
+          audioPlayer.volume = volume;
+        }
+      };
+    } catch (e) {
+      console.error("Could not load playlist:", e);
     }
   });
 </script>
@@ -383,8 +465,11 @@
           {#each playlist as file, i}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="p-3 rounded-xl flex items-center space-x-3 cursor-pointer transition-colors {currentFile === file ? 'bg-indigo-500/20 border border-indigo-500/30' : 'hover:bg-white/5 border border-transparent'}" on:click={() => playFile(file)}>
-              <div class="text-xs font-mono text-slate-500 w-5 text-center">{i + 1}</div>
+            <div class="p-3 rounded-xl flex items-center space-x-3 cursor-pointer transition-colors group {currentFile === file ? 'bg-indigo-500/20 border border-indigo-500/30' : 'hover:bg-white/5 border border-transparent'}" on:click={() => playFile(file)}>
+              <div class="text-xs font-mono text-slate-500 w-5 text-center group-hover:hidden">{i + 1}</div>
+              <button class="w-5 h-5 hidden group-hover:flex items-center justify-center text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded" on:click={(e) => removeTrack(file, e)} title="Xóa bài hát">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
               <div class="flex-1 truncate text-sm {currentFile === file ? 'text-indigo-200 font-bold' : 'text-slate-300'}">{file.name.replace(/\.[^/.]+$/, "")}</div>
               {#if currentFile === file && isPlaying}
                 <div class="w-4 h-4 flex space-x-0.5 items-end">
