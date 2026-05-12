@@ -9,6 +9,7 @@
   let duration = 0;
   let currentTime = 0;
   let volume = 1;
+  let showPlaylist = false;
   let showEQ = false;
   let playlist: File[] = [];
 
@@ -291,156 +292,161 @@
   });
 </script>
 
-<div class="min-h-screen bg-slate-900 text-white font-sans flex flex-col selection:bg-indigo-500/30 overflow-hidden relative">
-  <!-- Dynamic Background -->
-  <div class="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 opacity-80"></div>
-  <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614149162883-504ce4d13909?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center opacity-[0.03] blur-3xl mix-blend-overlay {isPlaying ? 'animate-pulse-slow' : ''}"></div>
+<div class="min-h-screen bg-zinc-950 text-white font-sans flex flex-col selection:bg-pink-500/30 overflow-hidden relative">
+  <!-- Modern Mesh Gradient Background -->
+  <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-fuchsia-600/30 rounded-full blur-[120px] pointer-events-none mix-blend-screen {isPlaying ? 'animate-pulse-slow' : ''}"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-violet-600/30 rounded-full blur-[120px] pointer-events-none mix-blend-screen {isPlaying ? 'animate-pulse-slow' : ''}" style="animation-delay: 1s"></div>
+  <div class="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none mix-blend-screen"></div>
+  <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1614149162883-504ce4d13909?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center opacity-[0.02] mix-blend-overlay pointer-events-none"></div>
   
-  <!-- Header -->
-  <header class="relative z-10 flex justify-between items-center p-4 backdrop-blur-md border-b border-white/5">
+  <!-- Floating Glass Header -->
+  <header class="relative z-20 flex justify-between items-center px-6 py-4 mx-4 mt-4 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-full shadow-lg shadow-black/20">
     <div class="flex items-center space-x-3">
-      <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+      <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-fuchsia-500 to-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(217,70,239,0.4)]">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
       </div>
-      <h1 class="font-bold text-lg tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 to-cyan-200">LinhHương Hi-Res Audio</h1>
+      <h1 class="font-extrabold text-lg tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">LinhHương Audio</h1>
     </div>
-    <div class="flex gap-2">
-      <button class="bg-white/5 hover:bg-white/15 px-4 py-2 rounded-full text-sm font-medium transition-colors border border-white/5 flex items-center gap-2 {showEQ ? 'bg-indigo-500/30 border-indigo-500/50 text-indigo-200' : ''}" on:click={() => showEQ = !showEQ}>
+    <div class="flex gap-3">
+      <button class="bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-full text-xs font-semibold transition-all border border-white/10 flex items-center gap-2 {showEQ ? 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-200' : 'text-zinc-300 hover:text-white'}" on:click={() => showEQ = !showEQ}>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-        Bộ chỉnh âm (EQ)
+        EQ
       </button>
-      <label class="cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 px-4 py-2 rounded-full text-sm font-medium transition-colors shadow-lg shadow-indigo-500/25 border border-white/10 flex items-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      <label class="cursor-pointer bg-white text-zinc-900 hover:bg-zinc-200 hover:scale-105 active:scale-95 px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
         Thêm nhạc
         <input type="file" accept="audio/*" multiple class="hidden" on:change={handleFileSelect} />
       </label>
-      <button class="bg-white/5 hover:bg-white/15 px-4 py-2 rounded-full text-sm font-medium transition-colors border border-white/5 flex items-center gap-2 {showPlaylist ? 'bg-white/15' : ''}" on:click={() => showPlaylist = !showPlaylist}>
+      <button class="bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-full text-xs font-semibold transition-all border border-white/10 flex items-center gap-2 text-zinc-300 hover:text-white {showPlaylist ? 'bg-white/15 text-white' : ''}" on:click={() => showPlaylist = !showPlaylist}>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-        Danh sách ({playlist.length})
+        Playlist ({playlist.length})
       </button>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="flex-1 relative z-10 flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden">
+  <main class="flex-1 relative z-10 flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden pt-8">
     
     <!-- Audio Visualizer Canvas -->
-    <div class="absolute bottom-0 left-0 w-full h-1/3 opacity-40 pointer-events-none">
+    <div class="absolute bottom-0 left-0 w-full h-2/5 opacity-50 pointer-events-none mix-blend-screen">
       <canvas bind:this={canvas} class="w-full h-full block"></canvas>
     </div>
 
     <!-- Vinyl / Album Art -->
-    <div class="relative w-64 h-64 sm:w-80 sm:h-80 mb-10 z-10 mt-8">
-      <div class="absolute inset-0 bg-black rounded-full shadow-[0_0_80px_rgba(99,102,241,0.2)] border border-slate-800 {isPlaying ? 'animate-spin-slow' : ''}">
+    <div class="relative w-64 h-64 sm:w-[360px] sm:h-[360px] mb-12 z-10 mt-4 group">
+      <div class="absolute inset-0 bg-[#0a0a0a] rounded-full shadow-[0_30px_60px_rgba(0,0,0,0.8),0_0_100px_rgba(217,70,239,0.15)] border border-zinc-800 transition-transform duration-500 ease-out {isPlaying ? 'animate-spin-slow scale-100' : 'scale-95'}">
         <div class="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent"></div>
-        <!-- Grooves -->
-        <div class="absolute inset-2 border border-white/5 rounded-full"></div>
-        <div class="absolute inset-6 border border-white/5 rounded-full"></div>
-        <div class="absolute inset-10 border border-white/5 rounded-full"></div>
-        <div class="absolute inset-14 border border-white/5 rounded-full"></div>
-        <div class="absolute inset-18 border border-white/5 rounded-full"></div>
+        <!-- Realistic Grooves -->
+        <div class="absolute inset-3 border border-white/5 rounded-full shadow-inner"></div>
+        <div class="absolute inset-[1.2rem] border border-white/5 rounded-full"></div>
+        <div class="absolute inset-[2.5rem] border border-white/5 rounded-full shadow-inner"></div>
+        <div class="absolute inset-[3.5rem] border border-white/5 rounded-full"></div>
+        <div class="absolute inset-[5rem] border border-white/5 rounded-full shadow-inner"></div>
         
         <!-- Center Label -->
-        <div class="absolute inset-0 m-auto w-1/3 h-1/3 bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 rounded-full shadow-inner border-4 border-slate-900 flex items-center justify-center overflow-hidden">
-          <div class="absolute inset-0 bg-black/10"></div>
-          <div class="w-3 h-3 bg-slate-900 rounded-full z-10 shadow-sm border border-white/20"></div>
+        <div class="absolute inset-0 m-auto w-[35%] h-[35%] bg-gradient-to-tr from-fuchsia-600 via-purple-600 to-cyan-500 rounded-full shadow-inner border-8 border-[#111] flex items-center justify-center overflow-hidden">
+          <div class="absolute inset-0 bg-black/10 mix-blend-multiply"></div>
+          <div class="absolute w-full h-full bg-[url('https://images.unsplash.com/photo-1614149162883-504ce4d13909?q=80&w=1200&auto=format&fit=crop')] bg-cover opacity-20"></div>
+          <div class="w-4 h-4 bg-zinc-950 rounded-full z-10 shadow-sm border border-zinc-800/50"></div>
         </div>
       </div>
       <!-- Reflection -->
-      <div class="absolute -inset-4 bg-gradient-to-t from-white/5 to-transparent rounded-full opacity-50 blur-xl pointer-events-none"></div>
+      <div class="absolute -inset-10 bg-gradient-to-t from-white/5 to-transparent rounded-full opacity-30 blur-2xl pointer-events-none mix-blend-overlay"></div>
     </div>
 
     <!-- Track Info -->
-    <div class="text-center w-full max-w-2xl mb-8 z-10 px-4">
-      <h2 class="text-3xl sm:text-4xl font-extrabold truncate text-white mb-2 tracking-tight drop-shadow-md">
-        {currentFile ? currentFile.name.replace(/\.[^/.]+$/, "") : "Chưa chọn bài hát"}
+    <div class="text-center w-full max-w-2xl mb-12 z-10 px-4">
+      <h2 class="text-3xl sm:text-5xl font-extrabold truncate text-white mb-3 tracking-tighter drop-shadow-lg">
+        {currentFile ? currentFile.name.replace(/\.[^/.]+$/, "") : "Not Playing"}
       </h2>
-      <div class="flex items-center justify-center gap-2">
-        <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-xs rounded border border-indigo-500/30 font-mono">Hi-Res Audio API</span>
-        <span class="text-indigo-200/60 text-sm font-medium">Linh Hương Linux OS</span>
+      <div class="flex items-center justify-center gap-3">
+        <span class="px-2.5 py-1 bg-white/10 text-zinc-300 text-xs rounded-md border border-white/10 font-medium tracking-wide uppercase shadow-sm backdrop-blur-md">Lossless Engine</span>
+        <span class="text-zinc-400 text-sm font-medium tracking-wide">LinhHương OS</span>
       </div>
     </div>
   </main>
 
   <!-- EQ Panel Overlay -->
   {#if showEQ}
-    <div class="absolute bottom-32 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6 z-30 shadow-2xl w-80 animate-fade-in-up">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-sm text-indigo-200 uppercase tracking-wider flex items-center gap-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-          Bộ chỉnh âm thanh
+    <div class="absolute bottom-40 left-1/2 -translate-x-1/2 bg-zinc-900/80 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 z-30 shadow-[0_30px_60px_rgba(0,0,0,0.6)] w-80 animate-fade-in-up">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="font-bold text-sm text-white tracking-widest uppercase flex items-center gap-2">
+          <svg class="w-4 h-4 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          Equalizer
         </h3>
-        <button on:click={() => showEQ = false} class="text-slate-400 hover:text-white">✕</button>
+        <button on:click={() => showEQ = false} class="text-zinc-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-full">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
       
       <div class="space-y-6">
         <div>
-          <div class="flex justify-between text-xs text-slate-300 mb-2 font-mono">
-            <span>Bass (Âm trầm)</span>
-            <span class={bass > 0 ? 'text-emerald-400' : bass < 0 ? 'text-rose-400' : ''}>{bass > 0 ? '+'+bass : bass} dB</span>
+          <div class="flex justify-between text-xs text-zinc-400 mb-2 font-semibold tracking-wide">
+            <span>BASS</span>
+            <span class={bass > 0 ? 'text-fuchsia-400' : bass < 0 ? 'text-zinc-500' : 'text-zinc-300'}>{bass > 0 ? '+'+bass : bass} dB</span>
           </div>
-          <input type="range" min="-15" max="15" step="1" bind:value={bass} on:input={updateBass} class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+          <input type="range" min="-15" max="15" step="1" bind:value={bass} on:input={updateBass} class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-fuchsia-500" />
         </div>
         
         <div>
-          <div class="flex justify-between text-xs text-slate-300 mb-2 font-mono">
-            <span>Treble (Âm bổng)</span>
-            <span class={treble > 0 ? 'text-emerald-400' : treble < 0 ? 'text-rose-400' : ''}>{treble > 0 ? '+'+treble : treble} dB</span>
+          <div class="flex justify-between text-xs text-zinc-400 mb-2 font-semibold tracking-wide">
+            <span>TREBLE</span>
+            <span class={treble > 0 ? 'text-cyan-400' : treble < 0 ? 'text-zinc-500' : 'text-zinc-300'}>{treble > 0 ? '+'+treble : treble} dB</span>
           </div>
-          <input type="range" min="-15" max="15" step="1" bind:value={treble} on:input={updateTreble} class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+          <input type="range" min="-15" max="15" step="1" bind:value={treble} on:input={updateTreble} class="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-400" />
         </div>
         
-        <div class="pt-2 flex justify-center">
-          <button class="text-xs bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded text-slate-300 transition-colors" on:click={() => {bass=0; treble=0; updateBass(); updateTreble();}}>Khôi phục mặc định</button>
+        <div class="pt-2">
+          <button class="w-full text-xs font-semibold bg-white/5 hover:bg-white/10 py-2.5 rounded-xl text-zinc-300 transition-all active:scale-95" on:click={() => {bass=0; treble=0; updateBass(); updateTreble();}}>Khôi phục mặc định</button>
         </div>
       </div>
     </div>
   {/if}
 
-  <!-- Control Bar -->
-  <footer class="relative z-40 bg-black/50 backdrop-blur-2xl border-t border-white/5 p-4 sm:p-6 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
-    <div class="max-w-5xl mx-auto flex flex-col space-y-4">
+  <!-- Control Bar Floating Dock -->
+  <footer class="relative z-40 mx-4 mb-6">
+    <div class="max-w-4xl mx-auto bg-zinc-900/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-5 sm:px-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
       
       <!-- Progress Bar -->
-      <div class="flex items-center space-x-4 text-xs font-mono text-slate-400">
-        <span class="w-10 text-right">{formatTime(currentTime)}</span>
-        <div class="flex-1 h-2 bg-slate-800 rounded-full cursor-pointer relative group overflow-hidden" on:click={seek}>
-          <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 rounded-full transition-all duration-100 ease-linear shadow-[0_0_10px_rgba(99,102,241,0.5)]" style="width: {progress}%"></div>
+      <div class="flex items-center space-x-4 text-[11px] font-bold tracking-widest text-zinc-400 mb-4">
+        <span class="w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
+        <div class="flex-1 h-1.5 bg-white/5 rounded-full cursor-pointer relative group overflow-hidden" on:click={seek}>
+          <div class="absolute top-0 left-0 h-full bg-white rounded-full transition-all duration-100 ease-linear shadow-[0_0_10px_rgba(255,255,255,0.8)]" style="width: {progress}%"></div>
           <div class="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
         </div>
-        <span class="w-10">{formatTime(duration)}</span>
+        <span class="w-10 tabular-nums">{formatTime(duration)}</span>
       </div>
 
       <!-- Controls -->
       <div class="flex items-center justify-between">
         <!-- Volume -->
-        <div class="flex items-center space-x-3 w-1/4">
-          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.657 6.343a8 8 0 010 11.314M12 19c-2.21 0-4-1.79-4-4V9c0-2.21 1.79-4 4-4s4 1.79 4 4v6c0 2.21-1.79 4-4 4z"></path></svg>
-          <input type="range" min="0" max="1" step="0.05" bind:value={volume} on:input={handleVolumeChange} class="w-24 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-400 hover:accent-indigo-300 transition-colors" />
+        <div class="flex items-center space-x-3 w-1/4 group">
+          <svg class="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M17.657 6.343a8 8 0 010 11.314M12 19c-2.21 0-4-1.79-4-4V9c0-2.21 1.79-4 4-4s4 1.79 4 4v6c0 2.21-1.79 4-4 4z"></path></svg>
+          <input type="range" min="0" max="1" step="0.05" bind:value={volume} on:input={handleVolumeChange} class="w-24 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white hover:accent-zinc-200 transition-colors opacity-70 group-hover:opacity-100" />
         </div>
 
         <!-- Main Buttons -->
         <div class="flex items-center justify-center space-x-6 flex-1">
-          <button class="text-slate-400 hover:text-white transition-colors p-2" on:click={prevTrack}>
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"></path></svg>
+          <button class="text-zinc-400 hover:text-white hover:scale-110 active:scale-95 transition-all p-2" on:click={prevTrack}>
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"></path></svg>
           </button>
           
-          <button class="w-14 h-14 bg-white text-indigo-900 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]" on:click={togglePlay}>
+          <button class="w-16 h-16 bg-white text-zinc-950 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.3)]" on:click={togglePlay}>
             {#if isPlaying}
-              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+              <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
             {:else}
-              <svg class="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+              <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
             {/if}
           </button>
 
-          <button class="text-slate-400 hover:text-white transition-colors p-2" on:click={nextTrack}>
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"></path></svg>
+          <button class="text-zinc-400 hover:text-white hover:scale-110 active:scale-95 transition-all p-2" on:click={nextTrack}>
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M11.555 5.168A1 1 0 0010 6v2.798l-5.445-3.63A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4z"></path></svg>
           </button>
         </div>
 
         <!-- Extra -->
         <div class="w-1/4 flex justify-end">
-          <button class="text-slate-400 hover:text-white transition-colors p-2" title="Loop">
+          <button class="text-zinc-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full" title="Loop">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
           </button>
         </div>
@@ -450,32 +456,34 @@
 
   <!-- Playlist Overlay -->
   {#if showPlaylist}
-    <div class="absolute inset-y-0 right-0 w-80 bg-slate-900/95 backdrop-blur-2xl border-l border-white/10 z-50 flex flex-col transform transition-transform shadow-2xl">
-      <div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-        <h3 class="font-bold text-lg">Danh sách phát</h3>
-        <button on:click={() => showPlaylist = false} class="text-slate-400 hover:text-white p-1">✕</button>
+    <div class="absolute inset-y-0 right-0 w-80 bg-zinc-950/80 backdrop-blur-3xl border-l border-white/10 z-50 flex flex-col transform transition-transform shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+      <div class="p-5 border-b border-white/10 flex justify-between items-center">
+        <h3 class="font-bold text-sm tracking-widest text-zinc-200 uppercase">Danh sách phát</h3>
+        <button on:click={() => showPlaylist = false} class="text-zinc-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-full p-1.5 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
-      <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
+      <div class="flex-1 overflow-y-auto p-3 custom-scrollbar">
         {#if playlist.length === 0}
-          <div class="flex flex-col items-center justify-center mt-20 opacity-50">
-            <svg class="w-12 h-12 mb-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-            <span class="text-sm">Chưa có bài hát nào</span>
+          <div class="flex flex-col items-center justify-center mt-32 opacity-40">
+            <svg class="w-12 h-12 mb-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+            <span class="text-sm font-medium tracking-wide">Chưa có bài hát nào</span>
           </div>
         {:else}
           {#each playlist as file, i}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="p-3 rounded-xl flex items-center space-x-3 cursor-pointer transition-colors group {currentFile === file ? 'bg-indigo-500/20 border border-indigo-500/30' : 'hover:bg-white/5 border border-transparent'}" on:click={() => playFile(file)}>
-              <div class="text-xs font-mono text-slate-500 w-5 text-center group-hover:hidden">{i + 1}</div>
-              <button class="w-5 h-5 hidden group-hover:flex items-center justify-center text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded" on:click={(e) => removeTrack(file, e)} title="Xóa bài hát">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <div class="p-3 mb-1.5 rounded-xl flex items-center space-x-3 cursor-pointer transition-all group {currentFile === file ? 'bg-white/10 border border-white/20 shadow-lg' : 'hover:bg-white/5 border border-transparent'}" on:click={() => playFile(file)}>
+              <div class="text-xs font-bold text-zinc-500 w-5 text-center group-hover:hidden">{i + 1}</div>
+              <button class="w-5 h-5 hidden group-hover:flex items-center justify-center text-rose-400 hover:text-white hover:bg-rose-500 rounded transition-colors" on:click={(e) => removeTrack(file, e)} title="Xóa bài hát">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
-              <div class="flex-1 truncate text-sm {currentFile === file ? 'text-indigo-200 font-bold' : 'text-slate-300'}">{file.name.replace(/\.[^/.]+$/, "")}</div>
+              <div class="flex-1 truncate text-sm font-medium tracking-wide {currentFile === file ? 'text-white' : 'text-zinc-400'}">{file.name.replace(/\.[^/.]+$/, "")}</div>
               {#if currentFile === file && isPlaying}
-                <div class="w-4 h-4 flex space-x-0.5 items-end">
-                  <div class="w-1 h-2 bg-cyan-400 animate-bounce" style="animation-delay: 0s"></div>
-                  <div class="w-1 h-4 bg-indigo-400 animate-bounce" style="animation-delay: 0.1s"></div>
-                  <div class="w-1 h-3 bg-purple-400 animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-4 h-4 flex space-x-0.5 items-end opacity-80">
+                  <div class="w-1 h-2 bg-fuchsia-400 animate-bounce" style="animation-delay: 0s"></div>
+                  <div class="w-1 h-4 bg-cyan-400 animate-bounce" style="animation-delay: 0.1s"></div>
+                  <div class="w-1 h-3 bg-violet-400 animate-bounce" style="animation-delay: 0.2s"></div>
                 </div>
               {/if}
             </div>
