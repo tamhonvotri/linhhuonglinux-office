@@ -15,7 +15,7 @@
     "tauri:dev:soan-thao": "pnpm --filter soan-thao tauri dev",
     "tauri:dev:bang-tinh": "pnpm --filter bang-tinh tauri dev",
     "tauri:dev:trinh-chieu": "pnpm --filter trinh-chieu tauri dev",
-    "tauri:build": "pnpm -r tauri build",
+    "tauri:build": "pnpm -r --workspace-concurrency=1 tauri build",
     "dev:ai": "pnpm --filter may-chu-ai dev"
   },
   "devDependencies": {
