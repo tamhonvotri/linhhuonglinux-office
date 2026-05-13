@@ -21,28 +21,44 @@
   let currentSearchStr = '';
   let searchStartIndex = -1;
 
+  // Pan & Zoom State
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+  let isPanning = false;
+  let startPanX = 0;
+  let startPanY = 0;
+
   const latexTemplates = [
     { cat: 'Cơ bản', name: 'Phân số', code: '$$ \\frac{a}{b} $$', icon: 'a/b' },
-    { cat: 'Cơ bản', name: 'Căn bậc 2', code: '$$ \\sqrt{x} $$', icon: '√x' },
+    { cat: 'Cơ bản', name: 'Căn bậc n', code: '$$ \\sqrt[n]{x} $$', icon: 'ⁿ√x' },
     { cat: 'Cơ bản', name: 'Lũy thừa', code: '$$ x^n $$', icon: 'xⁿ' },
-    { cat: 'Giải tích', name: 'Tích phân', code: '$$ \\int_{a}^{b} f(x) dx $$', icon: '∫' },
+    { cat: 'Cơ bản', name: 'Chỉ số dưới', code: '$$ x_n $$', icon: 'xₙ' },
+    { cat: 'Giải tích', name: 'Tích phân', code: '$$ \\int_{a}^{b} f(x) \\, dx $$', icon: '∫' },
+    { cat: 'Giải tích', name: 'Tích phân kép', code: '$$ \\iint_{D} f(x,y) \\, dA $$', icon: '∬' },
     { cat: 'Giải tích', name: 'Tổng Sigma', code: '$$ \\sum_{i=1}^{n} x_i $$', icon: '∑' },
     { cat: 'Giải tích', name: 'Giới hạn', code: '$$ \\lim_{x \\to \\infty} f(x) $$', icon: 'lim' },
+    { cat: 'Giải tích', name: 'Đạo hàm', code: '$$ \\frac{\\partial f}{\\partial x} $$', icon: '∂' },
     { cat: 'Đại số', name: 'Ma trận 2x2', code: '$$ \\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix} $$', icon: '[ ]' },
     { cat: 'Đại số', name: 'Hệ phương trình', code: '$$ \\begin{cases} x + y = 1 \\\\ x - y = 0 \\end{cases} $$', icon: '{ }' },
     { cat: 'Ký hiệu', name: 'Alpha, Beta', code: '\\alpha, \\beta, \\gamma', icon: 'α' },
-    { cat: 'Ký hiệu', name: 'Vô cực', code: '\\infty', icon: '∞' }
+    { cat: 'Ký hiệu', name: 'Vô cực', code: '\\infty', icon: '∞' },
+    { cat: 'Ký hiệu', name: 'Toán tử', code: '\\pm, \\times, \\div, \\neq', icon: '±' },
+    { cat: 'Tập hợp', name: 'Thuộc', code: '\\in, \\subset, \\cup', icon: '∈' }
   ];
 
   const typstTemplates = [
     { cat: 'Cơ bản', name: 'Phân số', code: '$ a / b $', icon: 'a/b' },
     { cat: 'Cơ bản', name: 'Căn', code: '$ sqrt(x) $', icon: '√x' },
     { cat: 'Cơ bản', name: 'Lũy thừa', code: '$ x^n $', icon: 'xⁿ' },
+    { cat: 'Giải tích', name: 'Tích phân', code: '$ int_a^b f(x) dif x $', icon: '∫' },
+    { cat: 'Giải tích', name: 'Tổng Sigma', code: '$ sum_(i=1)^n x_i $', icon: '∑' },
     { cat: 'Đại số', name: 'Ma trận', code: '$ mat(a, b; c, d) $', icon: '[ ]' },
     { cat: 'Đại số', name: 'Hệ PT', code: '$ cases(x + y = 1, x - y = 0) $', icon: '{ }' },
     { cat: 'Văn bản', name: 'Bảng (Table)', code: '#table(\n  columns: 2,\n  [Cột 1], [Cột 2],\n  [A], [B]\n)', icon: '⊞' },
     { cat: 'Văn bản', name: 'Chia cột', code: '#columns(2)[\n  Nội dung cột 1...\n  #colbreak()\n  Nội dung cột 2...\n]', icon: '⏸' },
-    { cat: 'Văn bản', name: 'Khung (Rect)', code: '#rect(fill: luma(240), radius: 4pt)[ Nội dung ]', icon: '▭' }
+    { cat: 'Văn bản', name: 'Khung (Rect)', code: '#rect(fill: luma(240), radius: 4pt)[ Nội dung ]', icon: '▭' },
+    { cat: 'Ký hiệu', name: 'Mũi tên', code: '$ ->, <->, => $', icon: '→' }
   ];
 
   const latexDict = [
@@ -50,24 +66,58 @@
     { trig: '\\sqrt', desc: 'Căn bậc 2', ins: '\\sqrt{${1:x}}' },
     { trig: '\\sum', desc: 'Tổng Sigma', ins: '\\sum_{${1:i=1}}^{${2:n}}' },
     { trig: '\\int', desc: 'Tích phân', ins: '\\int_{${1:a}}^{${2:b}}' },
+    { trig: '\\iint', desc: 'Tích phân kép', ins: '\\iint_{${1:D}}' },
+    { trig: '\\lim', desc: 'Giới hạn', ins: '\\lim_{${1:x \\to \\infty}}' },
+    { trig: '\\partial', desc: 'Đạo hàm riêng', ins: '\\partial' },
     { trig: '\\alpha', desc: 'Chữ Alpha', ins: '\\alpha' },
     { trig: '\\beta', desc: 'Chữ Beta', ins: '\\beta' },
+    { trig: '\\gamma', desc: 'Chữ Gamma', ins: '\\gamma' },
+    { trig: '\\Delta', desc: 'Chữ Delta', ins: '\\Delta' },
+    { trig: '\\pi', desc: 'Chữ Pi', ins: '\\pi' },
     { trig: '\\infty', desc: 'Vô cực', ins: '\\infty' },
+    { trig: '\\pm', desc: 'Cộng trừ', ins: '\\pm' },
+    { trig: '\\times', desc: 'Nhân', ins: '\\times' },
+    { trig: '\\div', desc: 'Chia', ins: '\\div' },
+    { trig: '\\neq', desc: 'Khác', ins: '\\neq' },
+    { trig: '\\approx', desc: 'Xấp xỉ', ins: '\\approx' },
+    { trig: '\\in', desc: 'Thuộc', ins: '\\in' },
+    { trig: '\\subset', desc: 'Tập con', ins: '\\subset' },
+    { trig: '\\cup', desc: 'Hợp', ins: '\\cup' },
+    { trig: '\\cap', desc: 'Giao', ins: '\\cap' },
+    { trig: '\\rightarrow', desc: 'Mũi tên phải', ins: '\\rightarrow' },
+    { trig: '\\Rightarrow', desc: 'Suy ra', ins: '\\Rightarrow' },
     { trig: '\\begin{cases}', desc: 'Hệ phương trình', ins: '\\begin{cases}\n${1:x} \\\\\n${2:y}\n\\end{cases}' },
-    { trig: '\\begin{bmatrix}', desc: 'Ma trận', ins: '\\begin{bmatrix}\n${1:a} & ${2:b} \\\\\n${3:c} & ${4:d}\n\\end{bmatrix}' },
+    { trig: '\\begin{bmatrix}', desc: 'Ma trận vuông', ins: '\\begin{bmatrix}\n${1:a} & ${2:b} \\\\\n${3:c} & ${4:d}\n\\end{bmatrix}' },
+    { trig: '\\begin{pmatrix}', desc: 'Ma trận tròn', ins: '\\begin{pmatrix}\n${1:a} & ${2:b} \\\\\n${3:c} & ${4:d}\n\\end{pmatrix}' },
+    { trig: '\\textbf', desc: 'In đậm', ins: '\\textbf{${1:text}}' },
+    { trig: '\\textit', desc: 'In nghiêng', ins: '\\textit{${1:text}}' },
   ];
 
   const typstDict = [
     { trig: '#table', desc: 'Tạo bảng', ins: '#table(columns: ${1:2}, [${2:A}], [${3:B}])' },
     { trig: '#columns', desc: 'Chia cột', ins: '#columns(${1:2})[\n  ${2:content}\n]' },
     { trig: '#rect', desc: 'Khung', ins: '#rect()[${1:content}]' },
+    { trig: '#align', desc: 'Căn lề', ins: '#align(${1:center})[${2:content}]' },
     { trig: 'sqrt', desc: 'Căn', ins: 'sqrt(${1:x})' },
     { trig: 'frac', desc: 'Phân số', ins: '${1:a} / ${2:b}' },
     { trig: 'sum', desc: 'Tổng', ins: 'sum_(${1:i=1})^(${2:n})' },
     { trig: 'int', desc: 'Tích phân', ins: 'int_(${1:a})^(${2:b})' },
+    { trig: 'lim', desc: 'Giới hạn', ins: 'lim_(${1:x -> oo})' },
     { trig: 'alpha', desc: 'Alpha', ins: 'alpha' },
     { trig: 'beta', desc: 'Beta', ins: 'beta' },
-    { trig: 'oo', desc: 'Vô cực', ins: 'oo' }
+    { trig: 'gamma', desc: 'Gamma', ins: 'gamma' },
+    { trig: 'pi', desc: 'Pi', ins: 'pi' },
+    { trig: 'oo', desc: 'Vô cực', ins: 'oo' },
+    { trig: 'in', desc: 'Thuộc', ins: 'in' },
+    { trig: 'subset', desc: 'Tập con', ins: 'subset' },
+    { trig: 'union', desc: 'Hợp', ins: 'union' },
+    { trig: 'sect', desc: 'Giao', ins: 'sect' },
+    { trig: '->', desc: 'Mũi tên phải', ins: '->' },
+    { trig: '=>', desc: 'Suy ra', ins: '=>' },
+    { trig: '<=>', desc: 'Tương đương', ins: '<=>' },
+    { trig: 'times', desc: 'Nhân', ins: 'times' },
+    { trig: 'div', desc: 'Chia', ins: 'div' },
+    { trig: '+-', desc: 'Cộng trừ', ins: '+-' }
   ];
 
   let activeTemplates = latexTemplates;
@@ -221,6 +271,41 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
     });
   }
 
+  function handleWheel(e: WheelEvent) {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomFactor = 0.1;
+      if (e.deltaY < 0) {
+        zoom = Math.min(zoom + zoomFactor, 3);
+      } else {
+        zoom = Math.max(zoom - zoomFactor, 0.3);
+      }
+    }
+  }
+
+  function handlePanStart(e: MouseEvent) {
+    if (e.button !== 0 && e.button !== 1) return;
+    isPanning = true;
+    startPanX = e.clientX - panX;
+    startPanY = e.clientY - panY;
+  }
+
+  function handlePanMove(e: MouseEvent) {
+    if (!isPanning) return;
+    panX = e.clientX - startPanX;
+    panY = e.clientY - startPanY;
+  }
+
+  function handlePanEnd() {
+    isPanning = false;
+  }
+
+  function resetView() {
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+  }
+
   async function renderContent() {
     compileError = '';
     if (mode === 'latex') {
@@ -331,20 +416,14 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
       </div>
     </div>
 
-    <div class="flex-1 relative bg-zinc-950/90 overflow-hidden">
-      <!-- Editor Mesh Background -->
-      <div class="absolute inset-0 pointer-events-none z-0">
-        <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[120px] rounded-full"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full"></div>
-      </div>
-
+    <div class="flex-1 relative bg-[#1e1e1e] overflow-hidden border-t border-[#333]">
       <textarea
         bind:this={textareaElement}
         bind:value={codeInput}
         on:input={handleInput}
         on:keydown={handleKeydown}
         on:click={closeAutocomplete}
-        class="absolute inset-0 w-full h-full p-8 bg-transparent text-indigo-50 font-mono text-[16px] leading-loose resize-none outline-none custom-scrollbar selection:bg-indigo-500/50 z-10 drop-shadow-sm"
+        class="absolute inset-0 w-full h-full p-8 bg-transparent text-[#d4d4d4] font-mono text-[16px] leading-[1.8] resize-none outline-none custom-scrollbar selection:bg-[#264f78] z-10"
         spellcheck="false"
       ></textarea>
       
@@ -377,25 +456,40 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
       {/if}
     </div>
     
-    <div class="flex-1 overflow-y-auto custom-scrollbar p-8 flex justify-center bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px]">
-      {#if compileError}
-        <div class="w-full bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl font-mono text-sm whitespace-pre-wrap shadow-sm">
-          <div class="font-bold mb-2">Lỗi Biên Dịch:</div>
-          {compileError}
-        </div>
-      {:else}
-        <div class="w-full max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-12 transition-all">
-          {#if mode === 'latex'}
-            <div id="preview-content" class="prose max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black prose-code:text-indigo-600 text-[13pt] font-serif">
-              {@html htmlOutput}
+    <div 
+      class="flex-1 overflow-hidden relative flex justify-center bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px]"
+      on:wheel|nonpassive={handleWheel}
+      on:mousedown={handlePanStart}
+      on:mousemove={handlePanMove}
+      on:mouseup={handlePanEnd}
+      on:mouseleave={handlePanEnd}
+      style="cursor: {isPanning ? 'grabbing' : 'grab'};"
+    >
+      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div 
+          class="relative pointer-events-auto transition-transform duration-75"
+          style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: center;"
+        >
+          {#if compileError}
+            <div class="w-full max-w-[21cm] bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl font-mono text-sm whitespace-pre-wrap shadow-sm">
+              <div class="font-bold mb-2">Lỗi Biên Dịch:</div>
+              {compileError}
             </div>
           {:else}
-            {#if typstSvgUrl}
-              <img src={typstSvgUrl} alt="Render" class="w-full h-auto" />
-            {/if}
+            <div class="w-full min-w-[21cm] max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-12">
+              {#if mode === 'latex'}
+                <div id="preview-content" class="prose max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black prose-code:text-indigo-600 text-[13pt] font-serif">
+                  {@html htmlOutput}
+                </div>
+              {:else}
+                {#if typstSvgUrl}
+                  <img src={typstSvgUrl} alt="Render" class="w-full h-auto" />
+                {/if}
+              {/if}
+            </div>
           {/if}
         </div>
-      {/if}
+      </div>
     </div>
   </aside>
 
