@@ -51,14 +51,7 @@
 
   let jsonError = '';
 
-  function parseScript() {
-    try {
-      const parsed = JSON.parse(scriptContent);
-      scenes = parsed;
-      jsonError = '';
-      if (!isAudienceView) {
-        updateAudience();
-      }
+
   function parseScript() {
     try {
       const parsed = JSON.parse(scriptContent);
