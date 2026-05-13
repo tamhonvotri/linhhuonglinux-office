@@ -54,26 +54,26 @@
   }
 
   function toggleSelect(index: number, event: MouseEvent) {
+    const newSelected = new Set(selectedIndices);
     if (event.shiftKey) {
-      // Very basic shift click
-      if (selectedIndices.size > 0) {
-        const lastSelected = Array.from(selectedIndices).pop()!;
+      if (newSelected.size > 0) {
+        const lastSelected = Array.from(newSelected).pop()!;
         const start = Math.min(lastSelected, index);
         const end = Math.max(lastSelected, index);
         for (let i = start; i <= end; i++) {
-          selectedIndices.add(i);
+          newSelected.add(i);
         }
       } else {
-        selectedIndices.add(index);
+        newSelected.add(index);
       }
     } else if (event.metaKey || event.ctrlKey) {
-      if (selectedIndices.has(index)) selectedIndices.delete(index);
-      else selectedIndices.add(index);
+      if (newSelected.has(index)) newSelected.delete(index);
+      else newSelected.add(index);
     } else {
-      selectedIndices.clear();
-      selectedIndices.add(index);
+      newSelected.clear();
+      newSelected.add(index);
     }
-    selectedIndices = selectedIndices; // reactivity
+    selectedIndices = newSelected;
   }
 
   function openLightbox(img: any) {
