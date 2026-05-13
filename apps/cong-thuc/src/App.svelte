@@ -172,12 +172,12 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
     const span = document.createElement('span');
     span.textContent = element.value.substring(position) || '.';
     div.appendChild(span);
-    document.body.appendChild(div);
+    element.parentElement?.appendChild(div);
     const coordinates = {
-      top: span.offsetTop,
-      left: span.offsetLeft
+      top: span.offsetTop - element.scrollTop,
+      left: span.offsetLeft - element.scrollLeft
     };
-    document.body.removeChild(div);
+    element.parentElement?.removeChild(div);
     return coordinates;
   }
 
@@ -457,7 +457,7 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
     </div>
     
     <div 
-      class="flex-1 overflow-hidden relative flex justify-center bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px]"
+      class="flex-1 overflow-hidden relative flex justify-center items-start pt-16 bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px]"
       on:wheel|nonpassive={handleWheel}
       on:mousedown={handlePanStart}
       on:mousemove={handlePanMove}
@@ -465,10 +465,10 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
       on:mouseleave={handlePanEnd}
       style="cursor: {isPanning ? 'grabbing' : 'grab'};"
     >
-      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="absolute inset-0 flex justify-center items-start pt-16 pointer-events-none">
         <div 
           class="relative pointer-events-auto transition-transform duration-75"
-          style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: center;"
+          style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: top center;"
         >
           {#if compileError}
             <div class="w-full max-w-[21cm] bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl font-mono text-sm whitespace-pre-wrap shadow-sm">
