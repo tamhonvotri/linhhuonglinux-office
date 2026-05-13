@@ -48,11 +48,14 @@
   const channel = new BroadcastChannel('linhhuong_presentation_channel');
 
   // Editor Tabs
-  let activeTab = 'visual'; // 'visual' | 'json' | 'templates'
+  let activeTab = 'visual'; // 'visual' | 'json' | 'templates' | 'storage'
 
   let draggedActorId = null;
   let dragOffsetX = 0;
   let dragOffsetY = 0;
+
+  let savedProjects = [];
+  let newProjectName = '';
 
   let jsonError = '';
 
@@ -223,6 +226,63 @@
     updateAudience();
   }
 
+  function saveToLocalStorage() {
+    if (!newProjectName.trim()) return alert('Vui lòng nhập tên kịch bản!');
+    const project = {
+      id: Date.now(),
+      name: newProjectName,
+      date: new Date().toLocaleString(),
+      content: scriptContent
+    };
+    savedProjects = [project, ...savedProjects];
+    localStorage.setItem('linhhuong_presentation_projects', JSON.stringify(savedProjects));
+    newProjectName = '';
+  }
+
+  function loadFromLocalStorage(project) {
+    if (confirm('Bạn có chắc muốn tải kịch bản này? Các chỉnh sửa hiện tại sẽ bị ghi đè.')) {
+      scriptContent = project.content;
+      parseScript();
+      currentSceneIdx = 0;
+      currentStepIdx = 0;
+      renderCurrentState();
+      activeTab = 'visual';
+    }
+  }
+
+  function deleteFromLocalStorage(id) {
+    if (confirm('Bạn có chắc muốn xóa bản lưu này?')) {
+      savedProjects = savedProjects.filter(p => p.id !== id);
+      localStorage.setItem('linhhuong_presentation_projects', JSON.stringify(savedProjects));
+    }
+  }
+
+  function exportToFile() {
+    const blob = new Blob([scriptContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'presentation_script.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importFromFile(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        scriptContent = e.target.result;
+        parseScript();
+        currentSceneIdx = 0;
+        currentStepIdx = 0;
+        renderCurrentState();
+        activeTab = 'visual';
+      };
+      reader.readAsText(file);
+    }
+  }
+
   function updateAudience() {
     if (isPresenterMode) {
       channel.postMessage({
@@ -235,6 +295,14 @@
   }
 
   onMount(() => {
+    // Load saved projects list
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('linhhuong_presentation_projects');
+      if (stored) {
+        savedProjects = JSON.parse(stored);
+      }
+    }
+
     // Check if we are the audience window
     if (window.location.search.includes('audience=true')) {
       isAudienceView = true;
@@ -312,6 +380,7 @@
           <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'visual' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'visual'}>Trực quan</button>
           <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'json' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'json'}>JSON</button>
           <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'templates' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'templates'}>Kho AI</button>
+          <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'storage' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'storage'}>Lưu trữ</button>
         </div>
       </div>
       
@@ -441,6 +510,50 @@
                 <p class="text-xs text-slate-500 mb-3">Tập trung vào nền đen, chữ to mờ ảo, hiệu ứng ánh sáng (blur) và viền đẹp mắt.</p>
                 <button class="w-full py-2 bg-slate-100 hover:bg-rose-50 text-rose-600 text-sm font-bold rounded-lg transition-colors border border-slate-200" on:click={() => copyPromptToClipboard('product')}>📋 Copy Prompt</button>
               </div>
+            </div>
+          </div>
+        </div>
+      {:else if activeTab === 'storage'}
+        <div class="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-6">
+          <!-- Xuất/Nhập ổ cứng -->
+          <div>
+            <h3 class="font-bold text-slate-800 text-lg mb-3">💾 Tệp tin (Ổ cứng)</h3>
+            <div class="flex gap-2">
+              <button class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow transition-colors flex items-center justify-center gap-2" on:click={exportToFile}>
+                ⬇️ Tải xuống (.json)
+              </button>
+              <label class="flex-1 py-3 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-sm font-bold rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2">
+                ⬆️ Mở file lên
+                <input type="file" accept=".json" class="hidden" on:change={importFromFile} />
+              </label>
+            </div>
+          </div>
+          
+          <div class="border-t border-slate-200"></div>
+
+          <!-- Lưu LocalStorage -->
+          <div>
+            <h3 class="font-bold text-slate-800 text-lg mb-3">📂 Bộ nhớ trình duyệt (Local)</h3>
+            <div class="flex gap-2 mb-4">
+              <input type="text" bind:value={newProjectName} placeholder="Tên kịch bản mới..." class="flex-1 p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+              <button class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded transition-colors" on:click={saveToLocalStorage}>Lưu mới</button>
+            </div>
+            
+            <div class="space-y-2">
+              {#each savedProjects as project (project.id)}
+                <div class="bg-white border border-slate-200 p-3 rounded-lg shadow-sm flex justify-between items-center group hover:border-indigo-300 transition-colors">
+                  <div class="overflow-hidden">
+                    <div class="font-bold text-slate-700 text-sm truncate">{project.name}</div>
+                    <div class="text-xs text-slate-400">{project.date}</div>
+                  </div>
+                  <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 text-xs font-bold rounded" on:click={() => loadFromLocalStorage(project)}>Mở</button>
+                    <button class="px-3 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold rounded" on:click={() => deleteFromLocalStorage(project.id)}>Xóa</button>
+                  </div>
+                </div>
+              {:else}
+                <div class="text-sm text-slate-400 italic text-center py-4">Chưa có kịch bản nào được lưu.</div>
+              {/each}
             </div>
           </div>
         </div>
