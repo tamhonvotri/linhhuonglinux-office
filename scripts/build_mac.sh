@@ -5,28 +5,34 @@ echo "=========================================="
 echo "🍏 Building LinhHuong Office for macOS"
 echo "=========================================="
 
-# 1. Check for Rust & Cargo
-if ! command -v cargo &> /dev/null; then
-    echo "Rust is not installed. Installing Rust..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
-fi
-
-# 2. Check for pnpm
-if ! command -v pnpm &> /dev/null; then
-    echo "pnpm is not installed. Installing pnpm..."
-    npm install -g pnpm
-fi
-
-# 3. Install JS dependencies
+# 1. Install Node.js dependencies
 echo "Installing Node.js dependencies..."
 pnpm install
 
-# 4. Build Tauri App
-echo "Starting Tauri Build for Trinh Chieu..."
-pnpm --filter trinh-chieu tauri build
+# 2. Build Tauri Apps sequentially (avoids cargo lock contention)
+echo "Starting Tauri Build for ALL applications..."
+pnpm tauri:build
+
+# 3. Zip up the .app folders for distribution
+echo "Zipping macOS Applications..."
+mkdir -p dist_releases/macOS
+cd target/release/bundle/macos
+
+for app in *.app; do
+  if [ -d "$app" ]; then
+    safe_name=$(echo "$app" | sed 's/ /-/g')
+    # If the app name has spaces, rename it temporarily
+    if [ "$app" != "$safe_name" ]; then
+        mv "$app" "$safe_name"
+    fi
+    echo "Zipping $safe_name..."
+    zip -q -r "../../../../dist_releases/macOS/${safe_name}.zip" "$safe_name"
+  fi
+done
+
+cd ../../../../
 
 echo "=========================================="
 echo "✅ macOS Build Complete!"
-echo "📁 Your .app and .dmg files are located in: apps/trinh-chieu/src-tauri/target/release/bundle/"
+echo "📁 Your packaged apps are located in: dist_releases/macOS/"
 echo "=========================================="
