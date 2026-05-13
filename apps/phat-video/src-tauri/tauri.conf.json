@@ -9,17 +9,17 @@
     "active": true,
     "targets": "all"
   },
-  "productName": "Linh Hương Phát Video",
-  "mainBinaryName": "video-player",
+  "productName": "phat-video",
+  "mainBinaryName": "phat-video",
   "version": "0.1.0",
-  "identifier": "com.linhhuong.video-player",
+  "identifier": "com.linhhuong.phat-video",
   "plugins": {},
   "app": {
     "windows": [
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Linh Hương Phát Video",
+        "title": "Linh Hương phat-video",
         "width": 1200,
         "height": 800,
         "useHttpsScheme": true

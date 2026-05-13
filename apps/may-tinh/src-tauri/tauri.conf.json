@@ -9,17 +9,17 @@
     "active": true,
     "targets": "all"
   },
-  "productName": "Linh Hương Máy Tính",
-  "mainBinaryName": "calculator",
+  "productName": "may-tinh",
+  "mainBinaryName": "may-tinh",
   "version": "0.1.0",
-  "identifier": "com.linhhuong.calculator",
+  "identifier": "com.linhhuong.may-tinh",
   "plugins": {},
   "app": {
     "windows": [
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Linh Hương Máy Tính",
+        "title": "Linh Hương may-tinh",
         "width": 1200,
         "height": 800,
         "useHttpsScheme": true

@@ -7,26 +7,19 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
+    "targets": "all"
   },
-  "productName": "LinhHuongOffice",
-  "mainBinaryName": "LinhHuongOffice",
+  "productName": "soan-thao",
+  "mainBinaryName": "soan-thao",
   "version": "0.1.0",
-  "identifier": "com.linhhuong.document",
+  "identifier": "com.linhhuong.soan-thao",
   "plugins": {},
   "app": {
     "windows": [
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Linh Hương Soạn Thảo",
+        "title": "Linh Hương soan-thao",
         "width": 1200,
         "height": 800,
         "useHttpsScheme": true

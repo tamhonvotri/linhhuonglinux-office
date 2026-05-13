@@ -7,26 +7,19 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
+    "targets": "all"
   },
-  "productName": "Linh Hương Trình Chiếu",
-  "mainBinaryName": "LinhHuongPresentation",
+  "productName": "trinh-chieu",
+  "mainBinaryName": "trinh-chieu",
   "version": "0.1.0",
-  "identifier": "com.linhhuong.presentation",
+  "identifier": "com.linhhuong.trinh-chieu",
   "plugins": {},
   "app": {
     "windows": [
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Linh Hương Trình Chiếu",
+        "title": "Linh Hương trinh-chieu",
         "width": 1200,
         "height": 800,
         "useHttpsScheme": true

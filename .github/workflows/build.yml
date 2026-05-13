@@ -24,7 +24,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Apps
-          path: apps/*/src-tauri/target/release/bundle/macos/*.app
+          path: target/release/bundle/macos/*.app
 
   build-windows:
     runs-on: windows-latest
@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Windows-Exe
-          path: apps/*/src-tauri/target/release/bundle/msi/*.msi
+          path: target/release/bundle/msi/*.msi
 
   build-linux:
     runs-on: ubuntu-latest
@@ -68,4 +68,30 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Linux-Deb
-          path: apps/*/src-tauri/target/release/bundle/deb/*.deb
+          path: target/release/bundle/deb/*.deb
+
+  release:
+    needs: [build-mac, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Linh Hương Office Latest Release
+          draft: false
+          prerelease: false
+          make_latest: true
+          files: |
+            artifacts/macOS-Apps/*
+            artifacts/Windows-Exe/*
+            artifacts/Linux-Deb/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
