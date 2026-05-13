@@ -156,6 +156,19 @@
       const targetRect = e.currentTarget.getBoundingClientRect();
       dragOffsetX = ((e.clientX - targetRect.left) / rect.width) * 100;
       dragOffsetY = ((e.clientY - targetRect.top) / rect.height) * 100;
+
+      const actor = activeActors.find(a => a.id === actorId);
+      if (actor) {
+        if (actor.class) {
+          const prefixes = ['top-', 'bottom-', 'left-', 'right-', 'mt-', 'mb-', 'ml-', 'mr-', '-top-', '-bottom-', '-left-', '-right-', '-mt-', '-mb-', '-ml-', '-mr-', 'translate-x-', 'translate-y-', '-translate-x-', '-translate-y-'];
+          actor.class = actor.class.split(' ').filter(c => !prefixes.some(p => c.startsWith(p))).join(' ');
+        }
+        actor.x = (((targetRect.left - rect.left) / rect.width) * 100).toFixed(2);
+        actor.y = (((targetRect.top - rect.top) / rect.height) * 100).toFixed(2);
+        scenes = scenes;
+        activeActors = activeActors;
+        scriptContent = JSON.stringify(scenes, null, 2);
+      }
     }
     e.preventDefault();
   }
