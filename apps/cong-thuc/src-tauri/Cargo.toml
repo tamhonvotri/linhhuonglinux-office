@@ -1,5 +1,5 @@
 [package]
-name = "document"
+name = "equation"
 version = "0.1.0"
 description = "Linh Huong Document Editor"
 authors = ["you"]

@@ -13,3 +13,4 @@ serde_json = "1.0"
 lho-schema = { path = "../../../core/lho-schema" }
 file-indexer = { path = "../../../core/file-indexer" }
 ai-engine = { path = "../../../core/ai-engine" }
+tauri-plugin-shell = "2"
