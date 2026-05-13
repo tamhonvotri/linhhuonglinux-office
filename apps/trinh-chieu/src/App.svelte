@@ -49,6 +49,8 @@
   // Editor Tabs
   let activeTab = 'visual'; // 'visual' | 'json' | 'templates'
 
+  let draggedActorId = null;
+
   let jsonError = '';
 
 
@@ -113,14 +115,43 @@
     if (!scenes || scenes.length === 0) return;
     const scene = scenes[currentSceneIdx];
     
-    // Thu thập tất cả actors từ step 0 đến currentStepIdx
-    let newActors = [];
+    let actorMap = new Map();
     for (let i = 0; i <= currentStepIdx; i++) {
       if (scene.steps[i]) {
-        newActors = [...newActors, ...scene.steps[i]];
+        for (let a of scene.steps[i]) {
+          actorMap.set(a.id, a);
+        }
       }
     }
-    activeActors = newActors;
+    activeActors = Array.from(actorMap.values());
+  }
+
+  function handleDragStart(e, actorId) {
+    if (isAudienceView) return;
+    draggedActorId = actorId;
+  }
+
+  function handleDragMove(e) {
+    if (!draggedActorId || isAudienceView) return;
+    const previewBox = document.getElementById('preview-box');
+    if (!previewBox) return;
+    const rect = previewBox.getBoundingClientRect();
+    const percentX = ((e.clientX - rect.left) / rect.width) * 100;
+    const percentY = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    const actor = activeActors.find(a => a.id === draggedActorId);
+    if (actor) {
+      actor.x = percentX.toFixed(2);
+      actor.y = percentY.toFixed(2);
+      scriptContent = JSON.stringify(scenes, null, 2);
+    }
+  }
+
+  function handleDragEnd() {
+    if (draggedActorId && !isAudienceView) {
+      updateAudience();
+    }
+    draggedActorId = null;
   }
 
   function nextStep() {
@@ -209,15 +240,17 @@
   <!-- Audience View (Fullscreen output) -->
   <div class="w-screen h-screen overflow-hidden {scenes[currentSceneIdx]?.bg || 'bg-black'} relative transition-colors duration-1000">
     {#each activeActors as actor (actor.id)}
-      {#if actor.type === 'text'}
-        <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{@html actor.content}</div>
-      {:else if actor.type === 'image'}
-        <img src={actor.src} alt="img" class="absolute {actor.class} {actor.enter} transition-all duration-700" />
-      {:else if actor.type === 'video'}
-        <video src={actor.src} class="absolute {actor.class} {actor.enter} transition-all duration-700" autoplay loop muted playsinline></video>
-      {:else if actor.type === 'shape'}
-        <div class="absolute {actor.class} {actor.enter} transition-all duration-700"></div>
-      {/if}
+      <div class="absolute {actor.class} {actor.enter} transition-all duration-700" style="{(actor.x !== undefined ? `left: ${actor.x}%; ` : '')}{(actor.y !== undefined ? `top: ${actor.y}%; ` : '')}">
+        {#if actor.type === 'text'}
+          {@html actor.content}
+        {:else if actor.type === 'image'}
+          <img src={actor.src} alt="img" class="w-full h-full object-cover" />
+        {:else if actor.type === 'video'}
+          <video src={actor.src} class="w-full h-full object-cover" autoplay loop muted playsinline></video>
+        {:else if actor.type === 'shape'}
+          <div class="w-full h-full bg-current"></div>
+        {/if}
+      </div>
     {/each}
   </div>
 
@@ -304,9 +337,15 @@
                             {#if actor.type === 'text'}
                               <input type="text" bind:value={actor.content} on:input={updateFromVisual} class="w-full mt-2 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder="Nội dung chữ..." />
                               <div class="flex gap-1 mt-2 mb-1">
-                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-left') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-left', ['text-center', 'text-right'])}>L</button>
-                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-center') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-center', ['text-left', 'text-right'])}>C</button>
-                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-right') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-right', ['text-left', 'text-center'])}>R</button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-left') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-left', ['text-center', 'text-right'])}>
+                                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h16" /></svg>
+                                </button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-center') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-center', ['text-left', 'text-right'])}>
+                                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M7 12h10M4 18h16" /></svg>
+                                </button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-right') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-right', ['text-left', 'text-center'])}>
+                                  <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M10 12h10M4 18h16" /></svg>
+                                </button>
                                 <div class="w-px bg-slate-300 mx-1"></div>
                                 <button class="px-2 py-1 text-xs font-bold border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('font-bold') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'font-bold', ['font-normal'])}>B</button>
                                 <button class="px-2 py-1 text-xs italic border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('italic') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'italic', [])}>I</button>
@@ -372,7 +411,7 @@
     </div>
 
     <!-- Right: Presenter Control & Preview -->
-    <div class="flex-1 flex flex-col h-full bg-slate-200">
+    <div class="flex-1 flex flex-col h-full bg-slate-200" on:mousemove={handleDragMove} on:mouseup={handleDragEnd} on:mouseleave={handleDragEnd}>
       <div class="p-4 bg-white border-b border-slate-300 flex justify-between items-center shadow-sm shrink-0">
         <div class="font-bold text-slate-700 text-lg">Bảng điều khiển (Presenter)</div>
         <div class="flex space-x-3 items-center">
@@ -387,17 +426,21 @@
       <!-- Preview Window -->
       <div class="flex-1 flex items-center justify-center p-8 overflow-hidden relative">
         <div class="w-full max-w-5xl aspect-video bg-black shadow-2xl rounded-lg overflow-hidden relative ring-4 ring-slate-800/20 transform scale-95 origin-center transition-transform hover:scale-100 duration-500">
-          <div class="w-full h-full relative {scenes[currentSceneIdx]?.bg || 'bg-black'} transition-colors duration-1000">
+          <div id="preview-box" class="w-full h-full relative {scenes[currentSceneIdx]?.bg || 'bg-black'} transition-colors duration-1000">
             {#each activeActors as actor (actor.id)}
-              {#if actor.type === 'text'}
-                <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{@html actor.content}</div>
-              {:else if actor.type === 'image'}
-                <img src={actor.src} alt="img" class="absolute {actor.class} {actor.enter} transition-all duration-700" />
-              {:else if actor.type === 'video'}
-                <video src={actor.src} class="absolute {actor.class} {actor.enter} transition-all duration-700" autoplay loop muted playsinline></video>
-              {:else if actor.type === 'shape'}
-                <div class="absolute {actor.class} {actor.enter} transition-all duration-700"></div>
-              {/if}
+              <div class="absolute {actor.class} {actor.enter} transition-all duration-700 cursor-move border-2 border-transparent hover:border-dashed hover:border-indigo-400" 
+                   style="{(actor.x !== undefined ? `left: ${actor.x}%; ` : '')}{(actor.y !== undefined ? `top: ${actor.y}%; ` : '')}"
+                   on:mousedown={(e) => handleDragStart(e, actor.id)}>
+                {#if actor.type === 'text'}
+                  {@html actor.content}
+                {:else if actor.type === 'image'}
+                  <img src={actor.src} alt="img" class="w-full h-full object-cover pointer-events-none" draggable="false" />
+                {:else if actor.type === 'video'}
+                  <video src={actor.src} class="w-full h-full object-cover pointer-events-none" autoplay loop muted playsinline draggable="false"></video>
+                {:else if actor.type === 'shape'}
+                  <div class="w-full h-full bg-current pointer-events-none"></div>
+                {/if}
+              </div>
             {/each}
           </div>
         </div>
