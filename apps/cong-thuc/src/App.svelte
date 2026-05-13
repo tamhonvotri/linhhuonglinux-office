@@ -1,7 +1,10 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import { marked } from 'marked';
+  import markedKatex from 'marked-katex-extension';
   import DOMPurify from 'dompurify';
+
+  marked.use(markedKatex({ throwOnError: false }));
 
   // State
   let mode: 'latex' | 'typst' = 'latex';
@@ -311,20 +314,9 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
     if (mode === 'latex') {
       try {
         const rawHtml = await marked.parse(codeInput);
-        htmlOutput = DOMPurify.sanitize(rawHtml as string);
-        tick().then(() => {
-          const previewElement = document.getElementById('preview-content');
-          if (previewElement && typeof (window as any).renderMathInElement === 'function') {
-            (window as any).renderMathInElement(previewElement, {
-              delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false},
-                {left: '\\(', right: '\\)', display: false},
-                {left: '\\[', right: '\\]', display: true}
-              ],
-              throwOnError: false
-            });
-          }
+        htmlOutput = DOMPurify.sanitize(rawHtml as string, {
+          ADD_TAGS: ['math', 'maction', 'maligngroup', 'malignmark', 'menclose', 'merror', 'mfenced', 'mfrac', 'mglyph', 'mi', 'mlabeledtr', 'mlongdiv', 'multiscripts', 'mn', 'mo', 'mover', 'mpadded', 'mphantom', 'mroot', 'mrow', 'ms', 'mscarries', 'mscarry', 'msgroup', 'msline', 'mspace', 'msqrt', 'msrow', 'mstack', 'mstyle', 'msub', 'msubsup', 'msup', 'mtable', 'mtd', 'mtext', 'mtr', 'munder', 'munderover', 'semantics', 'annotation', 'annotation-xml'],
+          ADD_ATTR: ['mathvariant', 'mathsize', 'mathcolor', 'mathbackground', 'dir', 'display', 'overflow', 'href', 'class', 'style', 'aria-hidden']
         });
       } catch (err) {
         console.error('Markdown Parse Error:', err);
@@ -409,10 +401,21 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
         <span class="font-mono text-zinc-400">Soạn thảo {mode.toUpperCase()}</span>
       </div>
       
-      <div class="ml-auto flex gap-3">
-        <button class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-zinc-800 hover:bg-zinc-700 text-white transition-colors flex items-center gap-2">
-          <span>📋</span> Copy Code
-        </button>
+      <div class="ml-auto flex items-center">
+        <!-- Formatting Toolkit -->
+        <div class="flex gap-1 items-center bg-zinc-800/80 p-1 rounded-lg mr-4 border border-white/5">
+          <button class="w-8 h-8 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors font-serif font-bold italic" on:click={() => insertText('**Đậm**')} title="In đậm (Bold)">B</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors font-serif italic" on:click={() => insertText('*Nghiêng*')} title="In nghiêng (Italic)">I</button>
+          <div class="w-px h-4 bg-zinc-600 mx-1"></div>
+          <button class="w-8 h-8 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors font-sans font-bold" on:click={() => insertText('\n## Tiêu đề\n')} title="Tiêu đề (Heading)">H</button>
+          <button class="w-8 h-8 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors" on:click={() => insertText('\n- Danh sách\n')} title="Danh sách (List)">•</button>
+        </div>
+        
+        <div class="flex gap-3">
+          <button class="px-4 py-1.5 rounded-lg text-sm font-semibold bg-zinc-800 hover:bg-zinc-700 text-white transition-colors flex items-center gap-2 border border-white/5 shadow-sm">
+            <span>📋</span> Copy Code
+          </button>
+        </div>
       </div>
     </div>
 
