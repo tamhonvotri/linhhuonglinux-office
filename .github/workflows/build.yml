@@ -20,20 +20,11 @@ jobs:
         run: pnpm install
       - name: Build Tauri Apps
         run: pnpm tauri:build
-      - name: Zip Mac Apps
-        run: |
-          cd target/release/bundle/macos
-          for app in *.app; do
-            # Replace spaces with hyphens in the filename to avoid URL issues
-            safe_name=$(echo "$app" | sed 's/ /-/g')
-            mv "$app" "$safe_name"
-            zip -r "${safe_name}.zip" "$safe_name"
-          done
       - name: Upload Mac Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Apps
-          path: target/release/bundle/macos/*.zip
+          path: target/release/bundle/dmg/*.dmg
 
   build-windows:
     runs-on: windows-latest

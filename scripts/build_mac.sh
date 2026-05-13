@@ -13,24 +13,13 @@ pnpm install
 echo "Starting Tauri Build for ALL applications..."
 pnpm tauri:build
 
-# 3. Zip up the .app folders for distribution
-echo "Zipping macOS Applications..."
+# 3. Gather the .dmg files for distribution
+echo "Gathering macOS DMG files..."
 mkdir -p dist_releases/macOS
-cd target/release/bundle/macos
 
-for app in *.app; do
-  if [ -d "$app" ]; then
-    safe_name=$(echo "$app" | sed 's/ /-/g')
-    # If the app name has spaces, rename it temporarily
-    if [ "$app" != "$safe_name" ]; then
-        mv "$app" "$safe_name"
-    fi
-    echo "Zipping $safe_name..."
-    zip -q -r "../../../../dist_releases/macOS/${safe_name}.zip" "$safe_name"
-  fi
-done
-
-cd ../../../../
+if [ -d "target/release/bundle/dmg" ]; then
+    cp target/release/bundle/dmg/*.dmg dist_releases/macOS/
+fi
 
 echo "=========================================="
 echo "✅ macOS Build Complete!"
