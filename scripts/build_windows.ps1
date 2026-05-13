@@ -9,9 +9,14 @@ Write-Host "=========================================="
 Write-Host "Installing Node.js dependencies..."
 pnpm install
 
+$rootDir = (Get-Item -Path ".\").FullName
+$distDir = Join-Path -Path $rootDir -ChildPath "dist_releases\Windows"
+
 # 2. Build Tauri Apps sequentially and gather MSI immediately
 Write-Host "Starting Tauri Build for ALL applications..."
-New-Item -ItemType Directory -Force -Path "dist_releases\Windows"
+if (-Not (Test-Path $distDir)) {
+    New-Item -ItemType Directory -Force -Path $distDir
+}
 
 $apps = Get-ChildItem -Path "apps" -Directory
 foreach ($app in $apps) {
@@ -22,8 +27,12 @@ foreach ($app in $apps) {
         pnpm tauri build
         Pop-Location
         
-        if (Test-Path "target\release\bundle\msi\*.msi") {
-            Copy-Item -Path "target\release\bundle\msi\*.msi" -Destination "dist_releases\Windows\" -Force
+        $msiPath = Join-Path -Path $rootDir -ChildPath "target\release\bundle\msi"
+        if (Test-Path "$msiPath\*.msi") {
+            Copy-Item -Path "$msiPath\*.msi" -Destination $distDir -Force
+            Write-Host "✅ Copied MSI for $appName"
+        } else {
+            Write-Host "⚠️ Warning: No MSI found for $appName in $msiPath"
         }
     }
 }
