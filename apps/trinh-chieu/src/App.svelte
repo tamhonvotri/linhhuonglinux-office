@@ -46,8 +46,19 @@
   let isAudienceView = false;
   const channel = new BroadcastChannel('linhhuong_presentation_channel');
 
+  // Editor Tabs
+  let activeTab = 'visual'; // 'visual' | 'json' | 'templates'
+
   let jsonError = '';
 
+  function parseScript() {
+    try {
+      const parsed = JSON.parse(scriptContent);
+      scenes = parsed;
+      jsonError = '';
+      if (!isAudienceView) {
+        updateAudience();
+      }
   function parseScript() {
     try {
       const parsed = JSON.parse(scriptContent);
@@ -60,6 +71,25 @@
     } catch (e) {
       jsonError = e.message;
     }
+  }
+
+  function updateFromVisual() {
+    scriptContent = JSON.stringify(scenes, null, 2);
+    if (!isAudienceView) {
+      updateAudience();
+    }
+    renderCurrentState();
+  }
+
+  function copyPromptToClipboard(type) {
+    let prompt = '';
+    if (type === 'basic') {
+      prompt = `Hãy viết cho tôi một kịch bản Cinematic JSON Trình chiếu về chủ đề: "Lịch sử Việt Nam". \nSử dụng các đối tượng text, image, video. Mảng JSON phải đúng cấu trúc:\n[ { "sceneId": "intro", "bg": "bg-slate-900", "note": "Ghi chú...", "steps": [ [ { "id": "t1", "type": "text", "content": "Tiêu đề", "class": "text-4xl text-white", "enter": "animate-fade-in" } ] ] } ]\nVui lòng sử dụng class TailwindCSS và hiệu ứng animate-fade-in, animate-slide-in-left...`;
+    } else if (type === 'product') {
+      prompt = `Đóng vai một chuyên gia Apple, viết kịch bản Cinematic JSON Trình chiếu ra mắt sản phẩm mới (Smartphone). Mảng JSON phải đúng cấu trúc: [ { "sceneId": "...", "bg": "bg-black", "note": "...", "steps": [...] } ]. Kết hợp shape phát sáng mờ (blur-3xl) và các text xuất hiện ấn tượng (animate-fade-in-up, animate-scale-in).`;
+    }
+    navigator.clipboard.writeText(prompt);
+    alert('Đã copy Prompt! Hãy dán vào ChatGPT / DeepSeek để tạo kịch bản.');
   }
 
   function renderCurrentState() {
@@ -178,26 +208,121 @@
   <!-- Presenter / Editor View -->
   <div class="flex h-screen bg-slate-100 font-sans">
     <!-- Left: LLM Script Editor -->
-    <div class="w-1/3 h-full border-r border-slate-300 bg-white flex flex-col shadow-xl z-10">
+    <div class="w-1/3 h-full border-r border-slate-300 bg-white flex flex-col shadow-xl z-10 overflow-hidden">
       <div class="p-4 bg-slate-800 text-white flex justify-between items-center shrink-0">
         <h2 class="font-bold text-lg flex items-center">
           <span class="text-indigo-400 mr-2 text-xl">🎬</span>
-          Kịch bản Trình chiếu (JSON)
+          Studio
         </h2>
+        <div class="flex bg-slate-700 rounded-lg p-1">
+          <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'visual' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'visual'}>Trực quan</button>
+          <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'json' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'json'}>JSON</button>
+          <button class="px-3 py-1 rounded text-sm font-medium transition-colors {activeTab === 'templates' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}" on:click={() => activeTab = 'templates'}>Kho AI</button>
+        </div>
       </div>
-      <div class="p-3 bg-indigo-50 text-indigo-800 text-xs border-b border-indigo-100">
-        Thiết kế theo chuẩn "Cinematic Scene". LLM chỉ cần tạo JSON với các Scene và Step. Mỗi Step chứa các đối tượng xuất hiện.
-      </div>
-      <textarea
-        id="script-editor"
-        bind:value={scriptContent}
-        class="flex-1 w-full p-4 font-mono text-sm bg-slate-50 text-slate-800 outline-none resize-none focus:ring-inset focus:ring-2 focus:ring-indigo-500 transition-all {jsonError ? 'border-2 border-red-500 bg-red-50' : ''}"
-        spellcheck="false"
-      ></textarea>
       
-      {#if jsonError}
-        <div class="p-2 bg-red-100 text-red-600 text-xs font-mono font-bold shrink-0 border-t border-red-200">
-          ⚠️ {jsonError}
+      {#if activeTab === 'json'}
+        <div class="p-3 bg-indigo-50 text-indigo-800 text-xs border-b border-indigo-100 shrink-0">
+          Chỉnh sửa trực tiếp mã JSON. Sử dụng phím tắt hoặc Copy từ AI dán vào đây.
+        </div>
+        <textarea
+          id="script-editor"
+          bind:value={scriptContent}
+          class="flex-1 w-full p-4 font-mono text-sm bg-slate-50 text-slate-800 outline-none resize-none focus:ring-inset focus:ring-2 focus:ring-indigo-500 transition-all {jsonError ? 'border-2 border-red-500 bg-red-50' : ''}"
+          spellcheck="false"
+        ></textarea>
+        
+        {#if jsonError}
+          <div class="p-2 bg-red-100 text-red-600 text-xs font-mono font-bold shrink-0 border-t border-red-200">
+            ⚠️ {jsonError}
+          </div>
+        {/if}
+      {:else if activeTab === 'visual'}
+        <div class="flex-1 overflow-y-auto bg-slate-50 p-4 custom-scrollbar">
+          {#each scenes as scene, sIdx}
+            <div class="mb-4 bg-white border {currentSceneIdx === sIdx ? 'border-indigo-500 shadow-md' : 'border-slate-200 shadow-sm'} rounded-xl overflow-hidden transition-all">
+              <div class="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-200 transition-colors" on:click={() => { currentSceneIdx = sIdx; currentStepIdx = 0; renderCurrentState(); updateAudience(); }}>
+                <div class="font-bold text-slate-700 flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">{sIdx + 1}</span>
+                  Scene: {scene.sceneId}
+                </div>
+                <button class="text-rose-400 hover:text-rose-600 text-lg transition-colors px-2" on:click|stopPropagation={() => { scenes.splice(sIdx, 1); scenes=scenes; updateFromVisual(); }}>×</button>
+              </div>
+              <div class="p-3 space-y-3">
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase">Background Class</label>
+                  <input type="text" bind:value={scene.bg} on:input={updateFromVisual} class="w-full mt-1 p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase">Ghi chú (Note)</label>
+                  <textarea bind:value={scene.note} on:input={updateFromVisual} class="w-full mt-1 p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none" rows="2"></textarea>
+                </div>
+                
+                <div class="mt-4">
+                  <label class="text-xs font-bold text-slate-500 uppercase mb-2 block">Các Bước (Steps)</label>
+                  {#each scene.steps as step, stIdx}
+                    <div class="ml-2 pl-3 border-l-2 {currentSceneIdx === sIdx && currentStepIdx === stIdx ? 'border-indigo-500' : 'border-slate-200'} mb-3 relative group transition-colors">
+                      <button class="absolute -left-[18px] top-0 bg-white rounded-full {currentSceneIdx === sIdx && currentStepIdx === stIdx ? 'text-indigo-600 shadow-md' : 'text-slate-300'} hover:text-indigo-500 transition-all z-10 w-8 h-8 flex items-center justify-center text-lg" on:click={() => { currentSceneIdx=sIdx; currentStepIdx=stIdx; renderCurrentState(); updateAudience(); }}>▶</button>
+                      <div class="text-xs font-semibold text-slate-400 mb-2 pl-4">Step {stIdx + 1}</div>
+                      <div class="pl-4 space-y-2">
+                        {#each step as actor, aIdx}
+                          <div class="bg-slate-50 p-2 rounded border border-slate-200 relative group/actor">
+                            <button class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white rounded-full text-xs font-bold opacity-0 group-hover/actor:opacity-100 transition-opacity" on:click={() => { step.splice(aIdx, 1); scenes=scenes; updateFromVisual(); }}>×</button>
+                            <div class="flex gap-2">
+                              <select bind:value={actor.type} on:change={updateFromVisual} class="w-24 p-1 border border-slate-300 rounded text-xs bg-white focus:outline-none focus:border-indigo-500">
+                                <option value="text">Text</option>
+                                <option value="image">Image</option>
+                                <option value="video">Video</option>
+                                <option value="shape">Shape</option>
+                              </select>
+                              <select bind:value={actor.enter} on:change={updateFromVisual} class="flex-1 p-1 border border-slate-300 rounded text-xs bg-white focus:outline-none focus:border-indigo-500">
+                                <option value="animate-fade-in">Fade In</option>
+                                <option value="animate-fade-in-up">Fade Up</option>
+                                <option value="animate-slide-in-bottom">Slide Bottom</option>
+                                <option value="animate-slide-in-left">Slide Left</option>
+                                <option value="animate-scale-in">Scale In</option>
+                                <option value="">Không có</option>
+                              </select>
+                            </div>
+                            {#if actor.type === 'text'}
+                              <input type="text" bind:value={actor.content} on:input={updateFromVisual} class="w-full mt-2 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder="Nội dung chữ..." />
+                            {:else if actor.type === 'image' || actor.type === 'video'}
+                              <input type="text" bind:value={actor.src} on:input={updateFromVisual} class="w-full mt-2 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder="URL hình ảnh/video..." />
+                            {/if}
+                            <input type="text" bind:value={actor.class} on:input={updateFromVisual} class="w-full mt-2 p-1 border border-slate-300 rounded text-xs font-mono text-indigo-600 focus:outline-none focus:border-indigo-500" placeholder="Tailwind classes..." />
+                          </div>
+                        {/each}
+                        <button class="w-full py-1.5 border border-dashed border-slate-300 rounded text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors" on:click={() => { step.push({ id: 'new_' + Date.now(), type: 'text', content: 'Văn bản mới', class: 'text-2xl text-white', enter: 'animate-fade-in' }); scenes=scenes; updateFromVisual(); }}>+ Thêm Object</button>
+                      </div>
+                    </div>
+                  {/each}
+                  <button class="w-full mt-2 py-2 border border-slate-200 bg-slate-50 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors" on:click={() => { scene.steps.push([]); scenes=scenes; updateFromVisual(); }}>+ Thêm Step mới</button>
+                </div>
+              </div>
+            </div>
+          {/each}
+          <button class="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm" on:click={() => { scenes = [...scenes, {sceneId: 'scene_' + (scenes.length+1), bg: 'bg-slate-900', note: '', steps: [[]]}]; updateFromVisual(); }}>+ TẠO SCENE MỚI</button>
+        </div>
+      {:else if activeTab === 'templates'}
+        <div class="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-6">
+          <div>
+            <h3 class="font-bold text-slate-800 text-lg mb-2">🤖 Khởi tạo bằng AI</h3>
+            <p class="text-sm text-slate-600 mb-4">Sao chép một trong các câu lệnh (Prompt) dưới đây và dán vào ChatGPT, Claude hoặc DeepSeek để AI tự động tạo ra mã JSON hoàn chỉnh cho bạn.</p>
+            
+            <div class="space-y-4">
+              <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm relative group">
+                <h4 class="font-bold text-indigo-600 text-sm mb-2">Thuyết trình Tiêu chuẩn</h4>
+                <p class="text-xs text-slate-500 mb-3">Tạo slide cấu trúc gồm Tiêu đề, Điểm nhấn, Hình ảnh.</p>
+                <button class="w-full py-2 bg-slate-100 hover:bg-indigo-50 text-indigo-700 text-sm font-bold rounded-lg transition-colors border border-slate-200" on:click={() => copyPromptToClipboard('basic')}>📋 Copy Prompt</button>
+              </div>
+
+              <div class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm relative group">
+                <h4 class="font-bold text-rose-500 text-sm mb-2">Ra mắt Sản phẩm (Apple Style)</h4>
+                <p class="text-xs text-slate-500 mb-3">Tập trung vào nền đen, chữ to mờ ảo, hiệu ứng ánh sáng (blur) và viền đẹp mắt.</p>
+                <button class="w-full py-2 bg-slate-100 hover:bg-rose-50 text-rose-600 text-sm font-bold rounded-lg transition-colors border border-slate-200" on:click={() => copyPromptToClipboard('product')}>📋 Copy Prompt</button>
+              </div>
+            </div>
+          </div>
         </div>
       {/if}
       
@@ -305,5 +430,18 @@
     0% { transform: translateY(0px) rotate(0deg); }
     50% { transform: translateY(-20px) rotate(2deg); }
     100% { transform: translateY(0px) rotate(0deg); }
+  }
+  :global(.custom-scrollbar::-webkit-scrollbar) {
+    width: 6px;
+  }
+  :global(.custom-scrollbar::-webkit-scrollbar-track) {
+    background: transparent;
+  }
+  :global(.custom-scrollbar::-webkit-scrollbar-thumb) {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+  }
+  :global(.custom-scrollbar::-webkit-scrollbar-thumb:hover) {
+    background-color: #94a3b8;
   }
 </style>
