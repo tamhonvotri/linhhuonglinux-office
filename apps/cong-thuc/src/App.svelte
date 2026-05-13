@@ -4,7 +4,7 @@
   import markedKatex from 'marked-katex-extension';
   import DOMPurify from 'dompurify';
 
-  marked.use(markedKatex({ throwOnError: false }));
+  marked.use(markedKatex({ throwOnError: false, nonStandard: true }));
 
   // State
   let mode: 'latex' | 'typst' = 'latex';
