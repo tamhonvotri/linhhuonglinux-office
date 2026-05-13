@@ -87,6 +87,14 @@
     lightboxImage = null;
   }
 
+  function autoAdvance() {
+    if (!lightboxImage) return;
+    const idx = filteredImages.findIndex(i => i.id === lightboxImage.id);
+    if (idx < filteredImages.length - 1) {
+      lightboxImage = filteredImages[idx + 1];
+    }
+  }
+
   function handleKeydown(e: KeyboardEvent) {
     if (lightboxImage) {
       if (e.key === 'Escape') {
@@ -102,10 +110,13 @@
         lightboxImage = filteredImages[idx + 1];
       }
       
-      if (e.key === '1') setLevel(lightboxImage, 'reject');
-      if (e.key === '2') setLevel(lightboxImage, 'neutral');
-      if (e.key === '3') setLevel(lightboxImage, 'keep');
-      if (e.key === '4') setLevel(lightboxImage, 'masterpiece');
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        if (e.key === '1') setLevel(lightboxImage, 'reject');
+        if (e.key === '2') setLevel(lightboxImage, 'neutral');
+        if (e.key === '3') setLevel(lightboxImage, 'keep');
+        if (e.key === '4') setLevel(lightboxImage, 'masterpiece');
+        setTimeout(autoAdvance, 150); // slight delay to see the UI reaction
+      }
       
       return;
     }
@@ -272,16 +283,16 @@
       
       <!-- Lightbox Controls -->
       <div class="h-20 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center gap-4 shrink-0" on:click|stopPropagation>
-        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'reject' ? 'bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'reject')}>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'reject' ? 'bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => { setLevel(lightboxImage, 'reject'); setTimeout(autoAdvance, 150); }}>
           ✖ Loại (1)
         </button>
-        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'neutral' ? 'bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'neutral')}>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'neutral' ? 'bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => { setLevel(lightboxImage, 'neutral'); setTimeout(autoAdvance, 150); }}>
           - Thường (2)
         </button>
-        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'keep' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'keep')}>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'keep' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => { setLevel(lightboxImage, 'keep'); setTimeout(autoAdvance, 150); }}>
           ✔ Ưng ý (3)
         </button>
-        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'masterpiece' ? 'bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'masterpiece')}>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'masterpiece' ? 'bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => { setLevel(lightboxImage, 'masterpiece'); setTimeout(autoAdvance, 150); }}>
           ★ Tuyệt đỉnh (4)
         </button>
       </div>
