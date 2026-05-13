@@ -7,7 +7,11 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all"
+    "targets": [
+      "app",
+      "deb",
+      "msi"
+    ]
   },
   "productName": "cong-thuc",
   "mainBinaryName": "cong-thuc",

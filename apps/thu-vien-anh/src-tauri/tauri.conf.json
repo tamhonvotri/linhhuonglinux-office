@@ -7,7 +7,11 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all"
+    "targets": [
+      "app",
+      "deb",
+      "msi"
+    ]
   },
   "productName": "thu-vien-anh",
   "mainBinaryName": "thu-vien-anh",
