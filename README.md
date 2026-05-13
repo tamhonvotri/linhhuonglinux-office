@@ -16,6 +16,23 @@ license: gpl
 
 ---
 
+## 📥 Tải Về Trực Tiếp (Downloads)
+
+Hệ sinh thái LinhHương Office được biên dịch hoàn toàn tự động đa nền tảng. Bạn không cần cài đặt code, chỉ cần click tải về và dùng ngay!
+
+<div align="center">
+
+| 🖥️ Hệ Điều Hành | 📝 Soạn Thảo (Word) | 📊 Bảng Tính (Excel) | 🎬 Trình Chiếu (PowerPoint) |
+| :--- | :--- | :--- | :--- |
+| **🪟 Windows (x64)** | [📥 Tải file .msi](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/soan-thao_x64.msi)<br><sup>[Dự phòng (HuggingFace)](#)</sup> | [📥 Tải file .msi](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/bang-tinh_x64.msi)<br><sup>[Dự phòng (HuggingFace)](#)</sup> | [📥 Tải file .msi](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/trinh-chieu_x64.msi)<br><sup>[Dự phòng (HuggingFace)](#)</sup> |
+| **🍏 macOS (M-series)** | [📥 Tải file .dmg](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/soan-thao_aarch64.dmg)<br><sup>[Dự phòng (HuggingFace)](#)</sup> | [📥 Tải file .dmg](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/bang-tinh_aarch64.dmg)<br><sup>[Dự phòng (HuggingFace)](#)</sup> | [📥 Tải file .dmg](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/trinh-chieu_aarch64.dmg)<br><sup>[Dự phòng (HuggingFace)](#)</sup> |
+| **🐧 Linux (Debian/Ubuntu)** | [📥 Tải file .deb](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/soan-thao_amd64.deb)<br><sup>[Dự phòng (HuggingFace)](#)</sup> | [📥 Tải file .deb](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/bang-tinh_amd64.deb)<br><sup>[Dự phòng (HuggingFace)](#)</sup> | [📥 Tải file .deb](https://github.com/tamhonvotri/linhhuonglinux-office/releases/latest/download/trinh-chieu_amd64.deb)<br><sup>[Dự phòng (HuggingFace)](#)</sup> |
+
+*💡 Mẹo: Link tải trực tiếp từ GitHub Releases. Nếu bạn gặp lỗi tải, hãy truy cập nhánh `releases` trên [HuggingFace của Linh Hương Linux](https://huggingface.co/linhhuonglinux/linhhuonglinux-office/tree/main) để tải thủ công.*
+</div>
+
+---
+
 ## 🌟 Tính Năng Nổi Bật (Features)
 
 ### 1. 📝 Soạn Thảo Văn Bản (LinhHuong Word Processor)
@@ -34,7 +51,13 @@ Engine tính toán mạnh mẽ, độ trễ bằng 0 (Zero-latency).
 
 ![Giao diện Bảng Tính](assets/demo/bang_tinh.png)
 
-### 3. 🛡️ Cửa Hàng Ứng Dụng (Software Center)
+### 3. 🎬 Trình Chiếu Trực Quan (LinhHuong Presentation)
+Công cụ trình chiếu thiết kế theo chuẩn Visual Studio (WYSIWYG) cực kỳ hiện đại.
+- **Kéo Thả Trực Quan:** Thiết kế slide trực tiếp, tọa độ tự động xuất ra JSON chuẩn mà không cần gõ code.
+- **Motion Animation Engine:** Hiệu ứng chuyển cảnh giữa các bước (Step) mượt mà như Keynote, tích hợp nét mờ (Ghost Path).
+- **Xuất Nhập Linh Hoạt:** Lưu kịch bản ngoại tuyến vào LocalStorage hoặc xuất ra file `.json` để chia sẻ.
+
+### 4. 🛡️ Cửa Hàng Ứng Dụng (Software Center)
 Hệ thống tự động liên kết với kho ứng dụng HuggingFace, giúp cập nhật phần mềm (OTA) chỉ với một cú click mà không cần thao tác dòng lệnh phức tạp.
 
 ---
