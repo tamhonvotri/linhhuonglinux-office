@@ -499,14 +499,14 @@ $ A = mat(1, 2; 3, 4) $
               {compileError}
             </div>
           {:else}
-            <div class="w-full min-w-[21cm] max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-12">
+            <div class="w-full min-w-[21cm] max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] {mode === 'latex' ? 'p-[2.5cm]' : 'p-0'}">
               {#if mode === 'latex'}
                 <div id="preview-content" class="prose max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black prose-code:text-indigo-600 text-[13pt] font-serif">
                   {@html htmlOutput}
                 </div>
               {:else}
                 {#if typstSvgUrl}
-                  <img src={typstSvgUrl} alt="Render" class="w-full h-auto" />
+                  <img src={typstSvgUrl} alt="Render" class="w-full h-auto block" />
                 {/if}
               {/if}
             </div>
