@@ -40,6 +40,7 @@
   let currentSceneIdx = 0;
   let currentStepIdx = 0;
   let activeActors = [];
+  let ghostActors = [];
 
   // Dual Monitor Logic
   let isPresenterMode = false;
@@ -50,6 +51,8 @@
   let activeTab = 'visual'; // 'visual' | 'json' | 'templates'
 
   let draggedActorId = null;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
 
   let jsonError = '';
 
@@ -124,11 +127,37 @@
       }
     }
     activeActors = Array.from(actorMap.values());
+    
+    if (!isAudienceView && currentStepIdx > 0) {
+      let prevMap = new Map();
+      for (let i = 0; i < currentStepIdx; i++) {
+        if (scene.steps[i]) {
+          for (let a of scene.steps[i]) {
+            prevMap.set(a.id, a);
+          }
+        }
+      }
+      ghostActors = Array.from(prevMap.values()).filter(p => {
+        const curr = activeActors.find(a => a.id === p.id);
+        return curr && (curr.x !== p.x || curr.y !== p.y);
+      });
+    } else {
+      ghostActors = [];
+    }
   }
 
   function handleDragStart(e, actorId) {
     if (isAudienceView) return;
     draggedActorId = actorId;
+    
+    const previewBox = document.getElementById('preview-box');
+    if (previewBox) {
+      const rect = previewBox.getBoundingClientRect();
+      const targetRect = e.currentTarget.getBoundingClientRect();
+      dragOffsetX = ((e.clientX - targetRect.left) / rect.width) * 100;
+      dragOffsetY = ((e.clientY - targetRect.top) / rect.height) * 100;
+    }
+    e.preventDefault();
   }
 
   function handleDragMove(e) {
@@ -136,13 +165,15 @@
     const previewBox = document.getElementById('preview-box');
     if (!previewBox) return;
     const rect = previewBox.getBoundingClientRect();
-    const percentX = ((e.clientX - rect.left) / rect.width) * 100;
-    const percentY = ((e.clientY - rect.top) / rect.height) * 100;
+    const percentX = ((e.clientX - rect.left) / rect.width) * 100 - dragOffsetX;
+    const percentY = ((e.clientY - rect.top) / rect.height) * 100 - dragOffsetY;
     
     const actor = activeActors.find(a => a.id === draggedActorId);
     if (actor) {
       actor.x = percentX.toFixed(2);
       actor.y = percentY.toFixed(2);
+      scenes = scenes;
+      activeActors = activeActors;
       scriptContent = JSON.stringify(scenes, null, 2);
     }
   }
@@ -427,8 +458,19 @@
       <div class="flex-1 flex items-center justify-center p-8 overflow-hidden relative">
         <div class="w-full max-w-5xl aspect-video bg-black shadow-2xl rounded-lg overflow-hidden relative ring-4 ring-slate-800/20 transform scale-95 origin-center transition-transform hover:scale-100 duration-500">
           <div id="preview-box" class="w-full h-full relative {scenes[currentSceneIdx]?.bg || 'bg-black'} transition-colors duration-1000">
+            {#each ghostActors as ghost (ghost.id + '_ghost')}
+              <div class="absolute {ghost.class} opacity-30 grayscale pointer-events-none" style="{(ghost.x !== undefined ? `left: ${ghost.x}%; ` : '')}{(ghost.y !== undefined ? `top: ${ghost.y}%; ` : '')}">
+                {#if ghost.type === 'text'}
+                  {@html ghost.content}
+                {:else if ghost.type === 'image'}
+                  <img src={ghost.src} alt="img" class="w-full h-full object-cover" />
+                {:else if ghost.type === 'shape'}
+                  <div class="w-full h-full bg-current"></div>
+                {/if}
+              </div>
+            {/each}
             {#each activeActors as actor (actor.id)}
-              <div class="absolute {actor.class} {actor.enter} transition-all duration-700 cursor-move border-2 border-transparent hover:border-dashed hover:border-indigo-400" 
+              <div class="absolute {actor.class} {actor.enter} {draggedActorId === actor.id ? '!transition-none scale-105 z-50' : 'transition-all duration-700'} cursor-move border-2 border-transparent hover:border-dashed hover:border-indigo-400" 
                    style="{(actor.x !== undefined ? `left: ${actor.x}%; ` : '')}{(actor.y !== undefined ? `top: ${actor.y}%; ` : '')}"
                    on:mousedown={(e) => handleDragStart(e, actor.id)}>
                 {#if actor.type === 'text'}
