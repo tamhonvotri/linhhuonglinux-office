@@ -5,7 +5,7 @@ colorFrom: blue
 colorTo: indigo
 sdk: static
 pinned: true
-license: mit
+license: gpl
 ---
 
 # 🚀 LinhHuong Linux Office Ecosystem 🐧
@@ -65,3 +65,12 @@ cd apps/bang-tinh && pnpm dev
 ```
 
 > **⭐ Hãy để lại 1 Star / Like nếu bạn thấy dự án hữu ích nhé!** Sự ủng hộ của bạn là động lực để chúng tôi phát triển hệ sinh thái phần mềm Việt.
+
+---
+
+## 📄 Giấy phép (License)
+
+Dự án này được phân phối dưới giấy phép **GNU General Public License v3.0 (GPLv3)**. 
+Bạn hoàn toàn có quyền tự do sao chép, chỉnh sửa và phân phối lại mã nguồn này vì mục đích cá nhân, giáo dục hoặc thương mại, với điều kiện mọi phiên bản phái sinh (nếu được phân phối) cũng phải được mở mã nguồn và chia sẻ dưới cùng giấy phép GPLv3.
+
+Xem chi tiết đầy đủ tại file [LICENSE.txt](./LICENSE.txt).
