@@ -13,6 +13,17 @@
   let showControls = true;
   let controlsTimeout: any;
   let showPlaylist = false;
+  let isHoveringControls = false;
+
+  function resetControlsTimeout() {
+    showControls = true;
+    if (controlsTimeout) clearTimeout(controlsTimeout);
+    if (isPlaying && !isHoveringControls && !showPlaylist) {
+      controlsTimeout = setTimeout(() => {
+        showControls = false;
+      }, 3000);
+    }
+  }
 
   // AI Engines State
   let aiAudioEnabled = false;
@@ -115,6 +126,7 @@
     videoPlayer.play().then(() => {
       if(audioContext && audioContext.state === 'suspended') audioContext.resume();
       isPlaying = true;
+      resetControlsTimeout();
     }).catch(e => console.error("Playback failed:", e));
   }
 
@@ -141,11 +153,13 @@
     if (!currentFile) return;
     if (isPlaying) {
       videoPlayer.pause();
+      isPlaying = false;
     } else {
       videoPlayer.play();
       if(audioContext && audioContext.state === 'suspended') audioContext.resume();
+      isPlaying = true;
     }
-    isPlaying = !isPlaying;
+    resetControlsTimeout();
   }
 
   function nextTrack() {
@@ -208,27 +222,19 @@
       isFullscreen = !!document.fullscreenElement;
     });
 
-    const resetControlsTimeout = () => {
-      showControls = true;
-      clearTimeout(controlsTimeout);
-      if (isPlaying) {
-        controlsTimeout = setTimeout(() => {
-          showControls = false;
-        }, 3000);
-      }
-    };
-
     window.addEventListener('mousemove', resetControlsTimeout);
     window.addEventListener('keydown', resetControlsTimeout);
+    window.addEventListener('click', resetControlsTimeout);
 
     return () => {
       window.removeEventListener('mousemove', resetControlsTimeout);
       window.removeEventListener('keydown', resetControlsTimeout);
+      window.removeEventListener('click', resetControlsTimeout);
     };
   });
 </script>
 
-<div class="min-h-screen bg-zinc-950 text-white font-sans flex flex-col relative overflow-hidden group selection:bg-cyan-500/30" on:mousemove={() => showControls = true}>
+<div class="min-h-screen bg-zinc-950 text-white font-sans flex flex-col relative overflow-hidden group selection:bg-cyan-500/30 {(!showControls && isPlaying) ? 'cursor-none' : ''}">
   
   {#if !currentFile}
     <!-- Empty State / Mesh Background -->
@@ -262,7 +268,7 @@
   ></video>
 
   <!-- Top Glass Header -->
-  <header class="absolute top-0 left-0 w-full px-6 py-4 z-40 transition-opacity duration-500 {showControls && currentFile ? 'opacity-100' : 'opacity-0'}">
+  <header class="absolute top-0 left-0 w-full px-6 py-4 z-40 transition-opacity duration-500 {showControls && currentFile ? 'opacity-100' : 'opacity-0 pointer-events-none'}" on:mouseenter={() => { isHoveringControls = true; resetControlsTimeout(); }} on:mouseleave={() => { isHoveringControls = false; resetControlsTimeout(); }}>
     <div class="max-w-7xl mx-auto flex justify-between items-start bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 shadow-lg">
       <div class="flex items-center gap-4">
         <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg">
@@ -294,7 +300,7 @@
   </header>
 
   <!-- Bottom Floating Control Dock -->
-  <footer class="absolute bottom-6 left-0 w-full px-6 z-40 transition-opacity duration-500 {showControls && currentFile && !isFullscreen ? 'opacity-100 transform translate-y-0' : (isFullscreen && showControls && currentFile) ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'}">
+  <footer class="absolute bottom-6 left-0 w-full px-6 z-40 transition-opacity duration-500 {showControls && currentFile && !isFullscreen ? 'opacity-100 transform translate-y-0' : (isFullscreen && showControls && currentFile) ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4 pointer-events-none'}" on:mouseenter={() => { isHoveringControls = true; resetControlsTimeout(); }} on:mouseleave={() => { isHoveringControls = false; resetControlsTimeout(); }}>
     <div class="max-w-4xl mx-auto bg-black/60 backdrop-blur-3xl border border-white/10 rounded-3xl p-5 sm:px-8 shadow-[0_20px_50px_rgba(0,0,0,0.7)]">
       
       <!-- Progress Bar -->
