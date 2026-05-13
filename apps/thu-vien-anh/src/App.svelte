@@ -24,21 +24,27 @@
     images = [];
     if (!directoryHandle) return;
     
-    for await (const entry of directoryHandle.values()) {
-      if (entry.kind === 'file') {
-        if (entry.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
-          const file = await entry.getFile();
-          const url = URL.createObjectURL(file);
-          images = [...images, {
-            name: entry.name,
-            url: url,
-            file: file,
-            level: 'neutral', // default level
-            id: crypto.randomUUID()
-          }];
+    async function traverse(dirHandle: any) {
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'file') {
+          if (entry.name.match(/\.(jpg|jpeg|png|webp|gif|svg|bmp|ico)$/i)) {
+            const file = await entry.getFile();
+            const url = URL.createObjectURL(file);
+            images = [...images, {
+              name: entry.name,
+              url: url,
+              file: file,
+              level: 'neutral', // default level
+              id: crypto.randomUUID()
+            }];
+          }
+        } else if (entry.kind === 'directory') {
+          await traverse(entry);
         }
       }
     }
+    
+    await traverse(directoryHandle);
   }
 
   function setLevel(image: any, level: string, event?: Event) {
@@ -140,19 +146,19 @@
               Tất cả ảnh ({images.length})
             </button>
             <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'masterpiece' ? 'bg-amber-500/20 text-amber-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'masterpiece'}>
-              <span>Tuyệt đỉnh (4)</span>
+              <span>Tuyệt đỉnh ({images.filter(i => i.level === 'masterpiece').length})</span>
               <span class="text-amber-500">★</span>
             </button>
             <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'keep' ? 'bg-emerald-500/20 text-emerald-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'keep'}>
-              <span>Ưng ý (3)</span>
+              <span>Ưng ý ({images.filter(i => i.level === 'keep').length})</span>
               <span class="text-emerald-500">✔</span>
             </button>
             <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'neutral' ? 'bg-blue-500/10 text-blue-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'neutral'}>
-              <span>Thường (2)</span>
+              <span>Thường ({images.filter(i => i.level === 'neutral').length})</span>
               <span class="text-blue-400">-</span>
             </button>
             <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'reject' ? 'bg-rose-500/10 text-rose-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'reject'}>
-              <span>Loại bỏ (1)</span>
+              <span>Loại bỏ ({images.filter(i => i.level === 'reject').length})</span>
               <span class="text-rose-500">✖</span>
             </button>
           </div>
