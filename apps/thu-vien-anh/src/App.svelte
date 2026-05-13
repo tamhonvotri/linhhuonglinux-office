@@ -51,6 +51,9 @@
     if (event) event.stopPropagation();
     image.level = level;
     images = [...images]; // trigger reactivity
+    if (lightboxImage && lightboxImage.id === image.id) {
+      lightboxImage = lightboxImage; // force lightbox reactivity
+    }
   }
 
   function toggleSelect(index: number, event: MouseEvent) {
@@ -86,12 +89,28 @@
 
   function handleKeydown(e: KeyboardEvent) {
     if (lightboxImage) {
-      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'Escape') {
+        closeLightbox();
+        return;
+      }
+      
+      const idx = filteredImages.findIndex(i => i.id === lightboxImage.id);
+      
+      if (e.key === 'ArrowLeft' && idx > 0) {
+        lightboxImage = filteredImages[idx - 1];
+      } else if (e.key === 'ArrowRight' && idx < filteredImages.length - 1) {
+        lightboxImage = filteredImages[idx + 1];
+      }
+      
+      if (e.key === '1') setLevel(lightboxImage, 'reject');
+      if (e.key === '2') setLevel(lightboxImage, 'neutral');
+      if (e.key === '3') setLevel(lightboxImage, 'keep');
+      if (e.key === '4') setLevel(lightboxImage, 'masterpiece');
+      
       return;
     }
 
     if (selectedIndices.size > 0) {
-      const idx = Array.from(selectedIndices)[0];
       if (e.key === '1') {
         Array.from(selectedIndices).forEach(i => images[i].level = 'reject');
         images = [...images];
