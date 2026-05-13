@@ -66,6 +66,30 @@
     }
   }
 
+  function toggleTailwindClass(actor, cls, conflicts = []) {
+    let classes = (actor.class || '').split(' ').filter(Boolean);
+    if (classes.includes(cls)) {
+      classes = classes.filter(c => c !== cls);
+    } else {
+      classes = classes.filter(c => !conflicts.includes(c));
+      classes.push(cls);
+    }
+    actor.class = classes.join(' ');
+    updateFromVisual();
+  }
+
+  function handleImageUpload(event, actor) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        actor.src = e.target.result;
+        updateFromVisual();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   function updateFromVisual() {
     scriptContent = JSON.stringify(scenes, null, 2);
     if (!isAudienceView) {
@@ -279,10 +303,30 @@
                             </div>
                             {#if actor.type === 'text'}
                               <input type="text" bind:value={actor.content} on:input={updateFromVisual} class="w-full mt-2 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder="Nội dung chữ..." />
+                              <div class="flex gap-1 mt-2 mb-1">
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-left') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-left', ['text-center', 'text-right'])}>L</button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-center') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-center', ['text-left', 'text-right'])}>C</button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-right') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-right', ['text-left', 'text-center'])}>R</button>
+                                <div class="w-px bg-slate-300 mx-1"></div>
+                                <button class="px-2 py-1 text-xs font-bold border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('font-bold') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'font-bold', ['font-normal'])}>B</button>
+                                <button class="px-2 py-1 text-xs italic border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('italic') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'italic', [])}>I</button>
+                                <div class="w-px bg-slate-300 mx-1"></div>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-sm') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-sm', ['text-base', 'text-lg', 'text-2xl', 'text-4xl', 'text-6xl'])}>S</button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-2xl') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-2xl', ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-4xl', 'text-6xl'])}>M</button>
+                                <button class="px-2 py-1 text-xs border border-slate-300 rounded hover:bg-slate-200 {actor.class?.includes('text-6xl') ? 'bg-indigo-100 border-indigo-300' : 'bg-white'}" on:click={() => toggleTailwindClass(actor, 'text-6xl', ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-2xl', 'text-4xl'])}>L</button>
+                              </div>
                             {:else if actor.type === 'image' || actor.type === 'video'}
-                              <input type="text" bind:value={actor.src} on:input={updateFromVisual} class="w-full mt-2 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder="URL hình ảnh/video..." />
+                              <div class="flex gap-2 mt-2">
+                                <input type="text" bind:value={actor.src} on:input={updateFromVisual} class="flex-1 p-1.5 border border-slate-300 rounded text-sm focus:outline-none focus:border-indigo-500" placeholder="URL hình ảnh/video..." />
+                                {#if actor.type === 'image'}
+                                  <label class="px-3 py-1.5 bg-indigo-50 text-indigo-600 border border-indigo-200 rounded text-sm font-semibold cursor-pointer hover:bg-indigo-100 transition-colors">
+                                    Up ảnh
+                                    <input type="file" accept="image/*" class="hidden" on:change={(e) => handleImageUpload(e, actor)} />
+                                  </label>
+                                {/if}
+                              </div>
                             {/if}
-                            <input type="text" bind:value={actor.class} on:input={updateFromVisual} class="w-full mt-2 p-1 border border-slate-300 rounded text-xs font-mono text-indigo-600 focus:outline-none focus:border-indigo-500" placeholder="Tailwind classes..." />
+                            <input type="text" bind:value={actor.class} on:input={updateFromVisual} class="w-full mt-2 p-1 border border-slate-300 rounded text-xs font-mono text-indigo-600 focus:outline-none focus:border-indigo-500" placeholder="Tailwind classes bổ sung..." />
                           </div>
                         {/each}
                         <button class="w-full py-1.5 border border-dashed border-slate-300 rounded text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors" on:click={() => { step.push({ id: 'new_' + Date.now(), type: 'text', content: 'Văn bản mới', class: 'text-2xl text-white', enter: 'animate-fade-in' }); scenes=scenes; updateFromVisual(); }}>+ Thêm Object</button>
