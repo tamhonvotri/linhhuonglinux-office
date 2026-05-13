@@ -22,7 +22,7 @@
   let searchStartIndex = -1;
 
   // Pan & Zoom State
-  let zoom = 1;
+  let zoom = 0.65;
   let panX = 0;
   let panY = 0;
   let isPanning = false;
@@ -301,7 +301,7 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
   }
 
   function resetView() {
-    zoom = 1;
+    zoom = 0.65;
     panX = 0;
     panY = 0;
   }
@@ -450,7 +450,16 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
   <aside class="w-[500px] xl:w-[600px] bg-zinc-200 flex flex-col shrink-0 relative overflow-hidden">
     <!-- Top toolbar preview -->
     <div class="h-16 flex items-center px-6 border-b border-zinc-300 bg-zinc-100 shrink-0 z-10 shadow-sm justify-between">
-      <span class="font-bold text-sm text-zinc-700">Live Preview</span>
+      <div class="flex items-center gap-3">
+        <span class="font-bold text-sm text-zinc-700">Live Preview</span>
+        <button 
+          class="px-2 py-1 text-[11px] font-bold text-zinc-500 hover:text-zinc-800 bg-zinc-200 hover:bg-zinc-300 rounded transition-colors"
+          on:click={resetView}
+          title="Khôi phục góc nhìn"
+        >
+          Reset View
+        </button>
+      </div>
       {#if isCompiling}
         <span class="text-xs font-bold text-indigo-600 animate-pulse">Đang dịch...</span>
       {/if}
