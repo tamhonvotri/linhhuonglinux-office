@@ -9,17 +9,23 @@ Write-Host "=========================================="
 Write-Host "Installing Node.js dependencies..."
 pnpm install
 
-# 2. Build Tauri Apps sequentially
+# 2. Build Tauri Apps sequentially and gather MSI immediately
 Write-Host "Starting Tauri Build for ALL applications..."
-pnpm tauri:build
-
-# 3. Gather the .msi files
-Write-Host "Gathering Windows Installers..."
 New-Item -ItemType Directory -Force -Path "dist_releases\Windows"
 
-# Tauri outputs MSI installers to target\release\bundle\msi\
-if (Test-Path "target\release\bundle\msi") {
-    Copy-Item -Path "target\release\bundle\msi\*.msi" -Destination "dist_releases\Windows\" -Force
+$apps = Get-ChildItem -Path "apps" -Directory
+foreach ($app in $apps) {
+    $appName = $app.Name
+    if (Test-Path "$($app.FullName)\src-tauri") {
+        Write-Host "Building $appName..."
+        Push-Location $app.FullName
+        pnpm tauri build
+        Pop-Location
+        
+        if (Test-Path "target\release\bundle\msi\*.msi") {
+            Copy-Item -Path "target\release\bundle\msi\*.msi" -Destination "dist_releases\Windows\" -Force
+        }
+    }
 }
 
 Write-Host "=========================================="

@@ -14,17 +14,20 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file lib
 echo "Installing Node.js dependencies..."
 pnpm install
 
-# 3. Build Tauri Apps sequentially
+# 3. Build Tauri Apps sequentially and gather DEB immediately
 echo "Starting Tauri Build for ALL applications..."
-pnpm tauri:build
-
-# 4. Gather the .deb files
-echo "Gathering Linux Installers..."
 mkdir -p dist_releases/Linux
 
-if [ -d "target/release/bundle/deb" ]; then
-    cp target/release/bundle/deb/*.deb dist_releases/Linux/
-fi
+for app_dir in apps/*; do
+  if [ -d "$app_dir/src-tauri" ]; then
+    echo "Building $app_dir..."
+    (cd "$app_dir" && pnpm tauri build)
+    
+    if ls target/release/bundle/deb/*.deb 1> /dev/null 2>&1; then
+        cp target/release/bundle/deb/*.deb dist_releases/Linux/
+    fi
+  fi
+done
 
 echo "=========================================="
 echo "✅ Linux Build Complete!"

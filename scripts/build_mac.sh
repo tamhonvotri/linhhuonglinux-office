@@ -9,17 +9,21 @@ echo "=========================================="
 echo "Installing Node.js dependencies..."
 pnpm install
 
-# 2. Build Tauri Apps sequentially (avoids cargo lock contention)
+# 2. Build Tauri Apps sequentially and gather .dmg immediately
 echo "Starting Tauri Build for ALL applications..."
-pnpm tauri:build
-
-# 3. Gather the .dmg files for distribution
-echo "Gathering macOS DMG files..."
 mkdir -p dist_releases/macOS
 
-if [ -d "target/release/bundle/dmg" ]; then
-    cp target/release/bundle/dmg/*.dmg dist_releases/macOS/
-fi
+for app_dir in apps/*; do
+  if [ -d "$app_dir/src-tauri" ]; then
+    echo "Building $app_dir..."
+    (cd "$app_dir" && pnpm tauri build)
+    
+    # Copy the dmg immediately before the next build deletes it
+    if ls target/release/bundle/dmg/*.dmg 1> /dev/null 2>&1; then
+        cp target/release/bundle/dmg/*.dmg dist_releases/macOS/
+    fi
+  fi
+done
 
 echo "=========================================="
 echo "✅ macOS Build Complete!"

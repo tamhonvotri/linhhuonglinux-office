@@ -16,15 +16,20 @@ jobs:
           node-version: 20
       - name: Install pnpm
         run: npm install -g pnpm
-      - name: Install Dependencies
-        run: pnpm install
-      - name: Build Tauri Apps
-        run: pnpm tauri:build
+      - name: Build Tauri Apps and Gather DMG
+        run: |
+          mkdir -p macos_dmgs
+          for app_dir in apps/*; do
+            if [ -d "$app_dir/src-tauri" ]; then
+              (cd "$app_dir" && pnpm tauri build)
+              cp target/release/bundle/dmg/*.dmg macos_dmgs/ || true
+            fi
+          done
       - name: Upload Mac Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Apps
-          path: target/release/bundle/dmg/*.dmg
+          path: macos_dmgs/*.dmg
 
   build-windows:
     runs-on: windows-latest
