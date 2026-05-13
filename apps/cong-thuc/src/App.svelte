@@ -24,13 +24,8 @@
   let currentSearchStr = '';
   let searchStartIndex = -1;
 
-  // Pan & Zoom State
+  // Zoom State
   let zoom = 0.65;
-  let panX = 0;
-  let panY = 0;
-  let isPanning = false;
-  let startPanX = 0;
-  let startPanY = 0;
 
   const latexTemplates = [
     { cat: 'Cơ bản', name: 'Phân số', code: '$$ \\frac{a}{b} $$', icon: 'a/b' },
@@ -297,27 +292,8 @@ $ A = mat(1, 2; 3, 4) $
     }
   }
 
-  function handlePanStart(e: MouseEvent) {
-    if (e.button !== 0 && e.button !== 1) return;
-    isPanning = true;
-    startPanX = e.clientX - panX;
-    startPanY = e.clientY - panY;
-  }
-
-  function handlePanMove(e: MouseEvent) {
-    if (!isPanning) return;
-    panX = e.clientX - startPanX;
-    panY = e.clientY - startPanY;
-  }
-
-  function handlePanEnd() {
-    isPanning = false;
-  }
-
   function resetView() {
     zoom = 0.65;
-    panX = 0;
-    panY = 0;
   }
 
   async function renderContent() {
@@ -464,14 +440,18 @@ $ A = mat(1, 2; 3, 4) $
   <aside class="w-[500px] xl:w-[600px] bg-zinc-200 flex flex-col shrink-0 relative overflow-hidden">
     <!-- Top toolbar preview -->
     <div class="h-16 flex items-center px-6 border-b border-zinc-300 bg-zinc-100 shrink-0 z-10 shadow-sm justify-between">
-      <div class="flex items-center gap-3">
-        <span class="font-bold text-sm text-zinc-700">Live Preview</span>
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-sm text-zinc-700 mr-2">Live Preview</span>
+        <button class="w-6 h-6 flex items-center justify-center text-xs font-bold text-zinc-500 hover:text-zinc-800 bg-zinc-200 hover:bg-zinc-300 rounded transition-colors" on:click={() => zoom = Math.max(0.3, zoom - 0.1)} title="Thu nhỏ">-</button>
+        <span class="text-xs font-mono w-10 text-center text-zinc-600 font-bold">{Math.round(zoom * 100)}%</span>
+        <button class="w-6 h-6 flex items-center justify-center text-xs font-bold text-zinc-500 hover:text-zinc-800 bg-zinc-200 hover:bg-zinc-300 rounded transition-colors" on:click={() => zoom = Math.min(3, zoom + 0.1)} title="Phóng to">+</button>
+        <div class="w-px h-4 bg-zinc-300 mx-1"></div>
         <button 
           class="px-2 py-1 text-[11px] font-bold text-zinc-500 hover:text-zinc-800 bg-zinc-200 hover:bg-zinc-300 rounded transition-colors"
           on:click={resetView}
           title="Khôi phục góc nhìn"
         >
-          Reset View
+          Reset
         </button>
       </div>
       {#if isCompiling}
@@ -480,38 +460,28 @@ $ A = mat(1, 2; 3, 4) $
     </div>
     
     <div 
-      class="flex-1 overflow-hidden relative flex justify-center items-start pt-16 bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px]"
+      class="flex-1 overflow-auto relative bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px] custom-scrollbar"
       on:wheel|nonpassive={handleWheel}
-      on:mousedown={handlePanStart}
-      on:mousemove={handlePanMove}
-      on:mouseup={handlePanEnd}
-      on:mouseleave={handlePanEnd}
-      style="cursor: {isPanning ? 'grabbing' : 'grab'};"
     >
-      <div class="absolute inset-0 flex justify-center items-start pt-16 pointer-events-none">
-        <div 
-          class="relative pointer-events-auto transition-transform duration-75"
-          style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: top center;"
-        >
-          {#if compileError}
-            <div class="w-full max-w-[21cm] bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl font-mono text-sm whitespace-pre-wrap shadow-sm">
-              <div class="font-bold mb-2">Lỗi Biên Dịch:</div>
-              {compileError}
-            </div>
-          {:else}
-            <div class="w-full min-w-[21cm] max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] {mode === 'latex' ? 'p-[2.5cm]' : 'p-0'}">
-              {#if mode === 'latex'}
-                <div id="preview-content" class="prose max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black prose-code:text-indigo-600 text-[13pt] font-serif">
-                  {@html htmlOutput}
-                </div>
-              {:else}
-                {#if typstSvgUrl}
-                  <img src={typstSvgUrl} alt="Render" class="w-full h-auto block" />
-                {/if}
+      <div class="flex justify-center p-8 origin-top transition-transform duration-75" style="zoom: {zoom};">
+        {#if compileError}
+          <div class="w-full max-w-[21cm] bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl font-mono text-sm whitespace-pre-wrap shadow-sm">
+            <div class="font-bold mb-2">Lỗi Biên Dịch:</div>
+            {compileError}
+          </div>
+        {:else}
+          <div class="w-full min-w-[21cm] max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] {mode === 'latex' ? 'p-[2.5cm]' : 'p-0'}">
+            {#if mode === 'latex'}
+              <div id="preview-content" class="prose max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black prose-code:text-indigo-600 text-[13pt] font-serif">
+                {@html htmlOutput}
+              </div>
+            {:else}
+              {#if typstSvgUrl}
+                <img src={typstSvgUrl} alt="Render" class="w-full h-auto block" />
               {/if}
-            </div>
-          {/if}
-        </div>
+            {/if}
+          </div>
+        {/if}
       </div>
     </div>
   </aside>
