@@ -32,6 +32,18 @@
   let startPanX = 0;
   let startPanY = 0;
 
+  // Saved Formulas State
+  interface SavedFormula {
+    id: string;
+    name: string;
+    code: string;
+    mode: 'latex' | 'typst';
+    timestamp: number;
+  }
+  let savedFormulas: SavedFormula[] = [];
+  let isManagerOpen = false;
+  let newFormulaName = '';
+
   const latexTemplates = [
     { cat: 'Cơ bản', name: 'Phân số', code: '$$ \\frac{a}{b} $$', icon: 'a/b' },
     { cat: 'Cơ bản', name: 'Căn bậc n', code: '$$ \\sqrt[n]{x} $$', icon: 'ⁿ√x' },
@@ -151,7 +163,37 @@ $ A = mat(1, 2; 3, 4) $
   onMount(() => {
     codeInput = defaultLatex;
     renderContent();
+    const saved = localStorage.getItem('linhhuong-saved-formulas');
+    if (saved) {
+      try { savedFormulas = JSON.parse(saved); } catch (e) {}
+    }
   });
+
+  function saveCurrentFormula() {
+    if (!newFormulaName.trim() || !codeInput.trim()) return;
+    const newFormula: SavedFormula = {
+      id: crypto.randomUUID(),
+      name: newFormulaName.trim(),
+      code: codeInput,
+      mode: mode,
+      timestamp: Date.now()
+    };
+    savedFormulas = [newFormula, ...savedFormulas];
+    localStorage.setItem('linhhuong-saved-formulas', JSON.stringify(savedFormulas));
+    newFormulaName = '';
+  }
+
+  function deleteFormula(id: string) {
+    savedFormulas = savedFormulas.filter(f => f.id !== id);
+    localStorage.setItem('linhhuong-saved-formulas', JSON.stringify(savedFormulas));
+  }
+
+  function loadFormula(formula: SavedFormula) {
+    setMode(formula.mode);
+    codeInput = formula.code;
+    renderContent();
+    isManagerOpen = false;
+  }
 
   function setMode(newMode: 'latex' | 'typst') {
     if (mode === newMode) return;
@@ -418,6 +460,8 @@ $ A = mat(1, 2; 3, 4) $
           <div class="w-px h-4 bg-zinc-600 mx-1"></div>
           <button class="w-8 h-8 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors font-sans font-bold" on:click={() => insertText('\n## Tiêu đề\n')} title="Tiêu đề (Heading)">H</button>
           <button class="w-8 h-8 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors" on:click={() => insertText('\n- Danh sách\n')} title="Danh sách (List)">•</button>
+          <div class="w-px h-4 bg-zinc-600 mx-1"></div>
+          <button class="w-8 h-8 flex items-center justify-center rounded text-amber-400 hover:text-amber-300 hover:bg-zinc-700 transition-colors" on:click={() => isManagerOpen = true} title="Quản lý Thư viện Công thức">📚</button>
         </div>
         
         <div class="flex gap-3">
@@ -514,6 +558,80 @@ $ A = mat(1, 2; 3, 4) $
   </aside>
 
 </div>
+
+<!-- Manager Popup -->
+{#if isManagerOpen}
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-8">
+    <div class="bg-[#1e1e1e] w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-zinc-700">
+      
+      <div class="h-16 border-b border-zinc-700 flex items-center px-6 justify-between bg-zinc-800/50 shrink-0">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2"><span>📚</span> Thư viện Công thức</h2>
+        <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors" on:click={() => isManagerOpen = false}>✕</button>
+      </div>
+
+      <div class="flex-1 flex overflow-hidden">
+        <div class="w-1/3 border-r border-zinc-700 p-6 flex flex-col bg-zinc-900/30">
+          <h3 class="text-sm font-bold text-zinc-300 mb-4 uppercase tracking-wider">Lưu công thức hiện tại</h3>
+          <input 
+            type="text" 
+            bind:value={newFormulaName} 
+            placeholder="Nhập tên công thức..." 
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors mb-4"
+            on:keydown={(e) => e.key === 'Enter' && saveCurrentFormula()}
+          />
+          <button 
+            class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
+            on:click={saveCurrentFormula}
+            disabled={!newFormulaName.trim() || !codeInput.trim()}
+          >
+            <span>💾</span> Lưu vào Thư viện
+          </button>
+          
+          <div class="mt-8">
+            <h3 class="text-sm font-bold text-zinc-300 mb-2 uppercase tracking-wider">Thống kê</h3>
+            <div class="flex gap-4 text-xs text-zinc-500">
+              <div class="bg-zinc-800 px-3 py-2 rounded border border-zinc-700">LaTeX: {savedFormulas.filter(f => f.mode === 'latex').length}</div>
+              <div class="bg-zinc-800 px-3 py-2 rounded border border-zinc-700">Typst: {savedFormulas.filter(f => f.mode === 'typst').length}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-2/3 p-6 overflow-y-auto custom-scrollbar bg-[#1e1e1e]">
+          <h3 class="text-sm font-bold text-zinc-300 mb-4 uppercase tracking-wider">Thư viện của tôi ({savedFormulas.length})</h3>
+          {#if savedFormulas.length === 0}
+            <div class="flex flex-col items-center justify-center h-48 text-zinc-500 border-2 border-dashed border-zinc-700 rounded-xl">
+              <span class="text-3xl mb-2">📭</span>
+              <p>Chưa có công thức nào được lưu.</p>
+            </div>
+          {:else}
+            <div class="grid grid-cols-2 gap-4">
+              {#each savedFormulas as formula}
+                <div class="bg-zinc-800/80 border border-zinc-700 hover:border-indigo-500/50 rounded-xl p-4 flex flex-col group transition-all">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                      <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase {formula.mode === 'latex' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400'}">
+                        {formula.mode}
+                      </span>
+                      <h4 class="font-bold text-sm text-zinc-200 truncate" title={formula.name}>{formula.name}</h4>
+                    </div>
+                    <button class="text-zinc-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" title="Xóa" on:click={() => deleteFormula(formula.id)}>🗑️</button>
+                  </div>
+                  <div class="flex-1 bg-zinc-900 rounded p-2 mb-3 overflow-hidden relative h-20">
+                    <pre class="text-[10px] text-zinc-400 font-mono whitespace-pre-wrap">{formula.code}</pre>
+                    <div class="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-zinc-900 to-transparent"></div>
+                  </div>
+                  <button class="w-full py-1.5 bg-zinc-700 hover:bg-indigo-600 text-xs font-bold text-white rounded transition-colors" on:click={() => loadFormula(formula)}>
+                    Mở trong Editor
+                  </button>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .custom-scrollbar::-webkit-scrollbar {
