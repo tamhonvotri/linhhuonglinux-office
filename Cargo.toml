@@ -1,8 +1,13 @@
 [workspace]
 members = [
     "core/*",
-    "apps/document/src-tauri",
-    "apps/spreadsheet/src-tauri",
-    "apps/presentation/src-tauri"
+    "apps/soan-thao/src-tauri",
+    "apps/bang-tinh/src-tauri",
+    "apps/trinh-chieu/src-tauri",
+    "apps/cong-thuc/src-tauri",
+    "apps/thu-vien-anh/src-tauri",
+    "apps/may-tinh/src-tauri",
+    "apps/nghe-nhac/src-tauri",
+    "apps/phat-video/src-tauri"
 ]
 resolver = "2"

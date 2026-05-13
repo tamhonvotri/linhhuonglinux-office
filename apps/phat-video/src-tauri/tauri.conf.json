@@ -1,0 +1,32 @@
+{
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5175"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
+  },
+  "productName": "Linh Hương Phát Video",
+  "mainBinaryName": "video-player",
+  "version": "0.1.0",
+  "identifier": "com.linhhuong.video-player",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Linh Hương Phát Video",
+        "width": 1200,
+        "height": 800,
+        "useHttpsScheme": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

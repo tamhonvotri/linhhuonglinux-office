@@ -1,0 +1,32 @@
+{
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5175"
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
+  },
+  "productName": "Linh Hương Máy Tính",
+  "mainBinaryName": "calculator",
+  "version": "0.1.0",
+  "identifier": "com.linhhuong.calculator",
+  "plugins": {},
+  "app": {
+    "windows": [
+      {
+        "fullscreen": false,
+        "resizable": true,
+        "title": "Linh Hương Máy Tính",
+        "width": 1200,
+        "height": 800,
+        "useHttpsScheme": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}
