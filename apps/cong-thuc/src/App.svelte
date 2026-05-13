@@ -125,16 +125,27 @@
 
   let activeTemplates = latexTemplates;
 
-  const defaultLatex = `% Nhập / để gọi gợi ý hoặc \\ để gõ lệnh LaTeX
-# Phương trình bậc 2
-Nghiệm của phương trình $ax^2 + bx + c = 0$ là:
+  const defaultLatex = `# Giải Tích & Đại Số
+## 1. Phương trình bậc 2
+Nghiệm của phương trình $ax^2 + bx + c = 0$ được tính bởi công thức:
 $$ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} $$
+
+## 2. Hệ phương trình
+$$
+\\begin{cases}
+2x + y = 5 \\\\
+x - y = 1
+\\end{cases}
+$$
 `;
 
-  const defaultTypst = `// Nhập # hoặc chữ toán học để gọi gợi ý
-= Phương trình bậc 2
-Nghiệm của phương trình $a x^2 + b x + c = 0$ là:
+  const defaultTypst = `= Giải Tích & Đại Số
+== 1. Phương trình bậc 2
+Nghiệm của phương trình $a x^2 + b x + c = 0$ được tính bởi công thức:
 $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
+
+== 2. Ma trận cơ bản
+$ A = mat(1, 2; 3, 4) $
 `;
 
   onMount(() => {
