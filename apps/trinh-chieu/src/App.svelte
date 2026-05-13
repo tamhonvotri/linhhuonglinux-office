@@ -9,8 +9,10 @@
   {
     "sceneId": "intro",
     "bg": "bg-slate-900",
+    "note": "Xin chào mọi người. Hôm nay tôi sẽ giới thiệu về tương lai của trình chiếu - nơi chúng ta không dùng slide, mà dùng kịch bản điện ảnh.",
     "steps": [
       [
+        { "id": "shape1", "type": "shape", "class": "absolute -top-32 -right-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl", "enter": "animate-fade-in" },
         { "id": "t1", "type": "text", "content": "Tương lai của Trình chiếu", "class": "text-6xl text-white font-bold text-center w-full mt-32", "enter": "animate-fade-in-up" }
       ],
       [
@@ -22,6 +24,7 @@
   {
     "sceneId": "features",
     "bg": "bg-indigo-900",
+    "note": "Điểm đặc biệt nhất là các hiệu ứng. Mọi thứ trôi chảy mượt mà, thu hút hoàn toàn sự tập trung của khán giả.",
     "steps": [
       [
         { "id": "t3", "type": "text", "content": "Hiệu ứng Mượt mà", "class": "absolute top-20 left-20 text-5xl text-white font-bold", "enter": "animate-slide-in-left" }
@@ -43,15 +46,19 @@
   let isAudienceView = false;
   const channel = new BroadcastChannel('linhhuong_presentation_channel');
 
+  let jsonError = '';
+
   function parseScript() {
     try {
-      scenes = JSON.parse(scriptContent);
+      const parsed = JSON.parse(scriptContent);
+      scenes = parsed;
+      jsonError = '';
       if (!isAudienceView) {
         updateAudience();
       }
       renderCurrentState();
     } catch (e) {
-      console.error("Lỗi parse script:", e);
+      jsonError = e.message;
     }
   }
 
@@ -156,9 +163,13 @@
   <div class="w-screen h-screen overflow-hidden {scenes[currentSceneIdx]?.bg || 'bg-black'} relative transition-colors duration-1000">
     {#each activeActors as actor (actor.id)}
       {#if actor.type === 'text'}
-        <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{actor.content}</div>
+        <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{@html actor.content}</div>
       {:else if actor.type === 'image'}
         <img src={actor.src} alt="img" class="absolute {actor.class} {actor.enter} transition-all duration-700" />
+      {:else if actor.type === 'video'}
+        <video src={actor.src} class="absolute {actor.class} {actor.enter} transition-all duration-700" autoplay loop muted playsinline></video>
+      {:else if actor.type === 'shape'}
+        <div class="absolute {actor.class} {actor.enter} transition-all duration-700"></div>
       {/if}
     {/each}
   </div>
@@ -180,9 +191,15 @@
       <textarea
         id="script-editor"
         bind:value={scriptContent}
-        class="flex-1 w-full p-4 font-mono text-sm bg-slate-50 text-slate-800 outline-none resize-none focus:ring-inset focus:ring-2 focus:ring-indigo-500 transition-all"
+        class="flex-1 w-full p-4 font-mono text-sm bg-slate-50 text-slate-800 outline-none resize-none focus:ring-inset focus:ring-2 focus:ring-indigo-500 transition-all {jsonError ? 'border-2 border-red-500 bg-red-50' : ''}"
         spellcheck="false"
       ></textarea>
+      
+      {#if jsonError}
+        <div class="p-2 bg-red-100 text-red-600 text-xs font-mono font-bold shrink-0 border-t border-red-200">
+          ⚠️ {jsonError}
+        </div>
+      {/if}
       
       <div class="p-4 bg-white border-t border-slate-200 shrink-0">
         <button on:click={startDualScreen} class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 flex justify-center items-center">
@@ -211,17 +228,28 @@
           <div class="w-full h-full relative {scenes[currentSceneIdx]?.bg || 'bg-black'} transition-colors duration-1000">
             {#each activeActors as actor (actor.id)}
               {#if actor.type === 'text'}
-                <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{actor.content}</div>
+                <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{@html actor.content}</div>
               {:else if actor.type === 'image'}
                 <img src={actor.src} alt="img" class="absolute {actor.class} {actor.enter} transition-all duration-700" />
+              {:else if actor.type === 'video'}
+                <video src={actor.src} class="absolute {actor.class} {actor.enter} transition-all duration-700" autoplay loop muted playsinline></video>
+              {:else if actor.type === 'shape'}
+                <div class="absolute {actor.class} {actor.enter} transition-all duration-700"></div>
               {/if}
             {/each}
           </div>
         </div>
       </div>
       
-      <div class="p-4 text-center text-slate-500 text-sm">
-        Sử dụng <kbd class="px-2 py-1 bg-white border border-slate-300 rounded mx-1 font-mono">Space</kbd> hoặc Mũi tên để điều hướng kịch bản.
+      <div class="p-4 bg-white border-t border-slate-300 min-h-[120px] max-h-[30vh] overflow-y-auto shrink-0 flex flex-col">
+        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Ghi chú (Presenter Notes)</h3>
+        <div class="text-slate-800 text-lg whitespace-pre-wrap leading-relaxed flex-1">
+          {scenes[currentSceneIdx]?.note || 'Không có ghi chú cho Scene này.'}
+        </div>
+      </div>
+      
+      <div class="p-3 text-center text-slate-500 text-sm shrink-0 bg-slate-200">
+        Sử dụng <kbd class="px-2 py-1 bg-white border border-slate-300 rounded mx-1 font-mono shadow-sm">Space</kbd> hoặc Mũi tên để điều hướng kịch bản.
       </div>
     </div>
   </div>
