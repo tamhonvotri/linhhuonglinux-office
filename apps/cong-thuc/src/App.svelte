@@ -24,8 +24,13 @@
   let currentSearchStr = '';
   let searchStartIndex = -1;
 
-  // Zoom State
+  // Zoom & Pan State
   let zoom = 0.65;
+  let panX = 0;
+  let panY = 0;
+  let isPanning = false;
+  let startPanX = 0;
+  let startPanY = 0;
 
   const latexTemplates = [
     { cat: 'Cơ bản', name: 'Phân số', code: '$$ \\frac{a}{b} $$', icon: 'a/b' },
@@ -281,19 +286,36 @@ $ A = mat(1, 2; 3, 4) $
   }
 
   function handleWheel(e: WheelEvent) {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const zoomFactor = 0.1;
-      if (e.deltaY < 0) {
-        zoom = Math.min(zoom + zoomFactor, 3);
-      } else {
-        zoom = Math.max(zoom - zoomFactor, 0.3);
-      }
+    e.preventDefault();
+    const zoomFactor = 0.05;
+    if (e.deltaY < 0) {
+      zoom = Math.min(zoom + zoomFactor, 3);
+    } else {
+      zoom = Math.max(zoom - zoomFactor, 0.2);
     }
+  }
+
+  function handlePanStart(e: MouseEvent) {
+    if (e.button !== 0 && e.button !== 1) return;
+    isPanning = true;
+    startPanX = e.clientX - panX;
+    startPanY = e.clientY - panY;
+  }
+
+  function handlePanMove(e: MouseEvent) {
+    if (!isPanning) return;
+    panX = e.clientX - startPanX;
+    panY = e.clientY - startPanY;
+  }
+
+  function handlePanEnd() {
+    isPanning = false;
   }
 
   function resetView() {
     zoom = 0.65;
+    panX = 0;
+    panY = 0;
   }
 
   async function renderContent() {
@@ -460,10 +482,15 @@ $ A = mat(1, 2; 3, 4) $
     </div>
     
     <div 
-      class="flex-1 overflow-auto relative bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px] custom-scrollbar"
+      class="flex-1 overflow-hidden relative flex justify-center items-start pt-16 bg-zinc-200/50 bg-[radial-gradient(#d4d4d8_1px,transparent_1px)] [background-size:16px_16px] select-none"
       on:wheel|nonpassive={handleWheel}
+      on:mousedown={handlePanStart}
+      on:mousemove={handlePanMove}
+      on:mouseup={handlePanEnd}
+      on:mouseleave={handlePanEnd}
+      style="cursor: {isPanning ? 'grabbing' : 'grab'};"
     >
-      <div class="flex justify-center p-8 origin-top transition-transform duration-75" style="zoom: {zoom};">
+      <div class="relative transition-transform duration-75" style="transform: translate({panX}px, {panY}px) scale({zoom}); transform-origin: top center;">
         {#if compileError}
           <div class="w-full max-w-[21cm] bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-xl font-mono text-sm whitespace-pre-wrap shadow-sm">
             <div class="font-bold mb-2">Lỗi Biên Dịch:</div>
