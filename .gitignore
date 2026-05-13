@@ -50,3 +50,21 @@ release-builds/
 *.njsproj
 *.sln
 *.sw?
+
+# AI Models and Datasets (DO NOT PUSH)
+*.gguf
+*.safetensors
+*.pt
+*.bin
+*.onnx
+models/
+datasets/
+
+# Design Files (DO NOT PUSH)
+*.psd
+*.ai
+*.fig
+*.xd
+*.sketch
+*.blend
+design_assets/
