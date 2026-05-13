@@ -1,281 +1,281 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  // --- STANDARD: "Cinematic Script" (Not Microsoft PowerPoint) ---
-  // The LLM generates a JSON array of "Scenes". Each scene has an array of "Actors" (text, image, shape).
-  // Actors enter, exit, or move based on user clicks (steps).
+  // State
+  let directoryHandle: any = null;
+  let images: any[] = [];
+  let filterLevel = 'all'; // all, reject, neutral, keep, masterpiece
+  let selectedIndices: Set<number> = new Set();
+  let lightboxImage: any = null;
   
-  let scriptContent = `[
-  {
-    "sceneId": "intro",
-    "bg": "bg-slate-900",
-    "steps": [
-      [
-        { "id": "t1", "type": "text", "content": "Tương lai của Trình chiếu", "class": "text-6xl text-white font-bold text-center w-full mt-32", "enter": "animate-fade-in-up" }
-      ],
-      [
-        { "id": "i1", "type": "image", "src": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop", "class": "absolute bottom-0 left-0 w-full h-64 object-cover opacity-50", "enter": "animate-slide-in-bottom" },
-        { "id": "t2", "type": "text", "content": "Không phải Slide tĩnh. Đây là Kịch bản Điện ảnh.", "class": "text-2xl text-indigo-300 font-medium text-center w-full mt-8", "enter": "animate-fade-in" }
-      ]
-    ]
-  },
-  {
-    "sceneId": "features",
-    "bg": "bg-indigo-900",
-    "steps": [
-      [
-        { "id": "t3", "type": "text", "content": "Hiệu ứng Mượt mà", "class": "absolute top-20 left-20 text-5xl text-white font-bold", "enter": "animate-slide-in-left" }
-      ],
-      [
-        { "id": "i2", "type": "image", "src": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=800&auto=format&fit=crop", "class": "absolute top-40 right-20 w-96 rounded-2xl shadow-2xl animate-float", "enter": "animate-scale-in" }
-      ]
-    ]
-  }
-]`;
+  // UI State
+  let isDragging = false;
 
-  let scenes = [];
-  let currentSceneIdx = 0;
-  let currentStepIdx = 0;
-  let activeActors = [];
-
-  // Dual Monitor Logic
-  let isPresenterMode = false;
-  let isAudienceView = false;
-  const channel = new BroadcastChannel('linhhuong_presentation_channel');
-
-  function parseScript() {
+  async function loadFolder() {
     try {
-      scenes = JSON.parse(scriptContent);
-      if (!isAudienceView) {
-        updateAudience();
-      }
-      renderCurrentState();
+      directoryHandle = await (window as any).showDirectoryPicker();
+      await readDirectory();
     } catch (e) {
-      console.error("Lỗi parse script:", e);
+      console.error(e);
     }
   }
 
-  function renderCurrentState() {
-    if (!scenes || scenes.length === 0) return;
-    const scene = scenes[currentSceneIdx];
+  async function readDirectory() {
+    images = [];
+    if (!directoryHandle) return;
     
-    // Thu thập tất cả actors từ step 0 đến currentStepIdx
-    let newActors = [];
-    for (let i = 0; i <= currentStepIdx; i++) {
-      if (scene.steps[i]) {
-        newActors = [...newActors, ...scene.steps[i]];
+    for await (const entry of directoryHandle.values()) {
+      if (entry.kind === 'file') {
+        if (entry.name.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+          const file = await entry.getFile();
+          const url = URL.createObjectURL(file);
+          images = [...images, {
+            name: entry.name,
+            url: url,
+            file: file,
+            level: 'neutral', // default level
+            id: crypto.randomUUID()
+          }];
+        }
       }
     }
-    activeActors = newActors;
   }
 
-  function nextStep() {
-    if (scenes.length === 0) return;
-    const scene = scenes[currentSceneIdx];
-    if (currentStepIdx < scene.steps.length - 1) {
-      currentStepIdx++;
-    } else if (currentSceneIdx < scenes.length - 1) {
-      currentSceneIdx++;
-      currentStepIdx = 0;
+  function setLevel(image: any, level: string, event?: Event) {
+    if (event) event.stopPropagation();
+    image.level = level;
+    images = [...images]; // trigger reactivity
+  }
+
+  function toggleSelect(index: number, event: MouseEvent) {
+    if (event.shiftKey) {
+      // Very basic shift click
+      if (selectedIndices.size > 0) {
+        const lastSelected = Array.from(selectedIndices).pop()!;
+        const start = Math.min(lastSelected, index);
+        const end = Math.max(lastSelected, index);
+        for (let i = start; i <= end; i++) {
+          selectedIndices.add(i);
+        }
+      } else {
+        selectedIndices.add(index);
+      }
+    } else if (event.metaKey || event.ctrlKey) {
+      if (selectedIndices.has(index)) selectedIndices.delete(index);
+      else selectedIndices.add(index);
+    } else {
+      selectedIndices.clear();
+      selectedIndices.add(index);
     }
-    renderCurrentState();
-    updateAudience();
+    selectedIndices = selectedIndices; // reactivity
   }
 
-  function prevStep() {
-    if (scenes.length === 0) return;
-    if (currentStepIdx > 0) {
-      currentStepIdx--;
-    } else if (currentSceneIdx > 0) {
-      currentSceneIdx--;
-      currentStepIdx = scenes[currentSceneIdx].steps.length - 1;
+  function openLightbox(img: any) {
+    lightboxImage = img;
+  }
+
+  function closeLightbox() {
+    lightboxImage = null;
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (lightboxImage) {
+      if (e.key === 'Escape') closeLightbox();
+      return;
     }
-    renderCurrentState();
-    updateAudience();
-  }
 
-  function updateAudience() {
-    if (isPresenterMode) {
-      channel.postMessage({
-        type: 'SYNC_STATE',
-        sceneIdx: currentSceneIdx,
-        stepIdx: currentStepIdx,
-        script: scriptContent
-      });
+    if (selectedIndices.size > 0) {
+      const idx = Array.from(selectedIndices)[0];
+      if (e.key === '1') {
+        Array.from(selectedIndices).forEach(i => images[i].level = 'reject');
+        images = [...images];
+      }
+      if (e.key === '2') {
+        Array.from(selectedIndices).forEach(i => images[i].level = 'neutral');
+        images = [...images];
+      }
+      if (e.key === '3') {
+        Array.from(selectedIndices).forEach(i => images[i].level = 'keep');
+        images = [...images];
+      }
+      if (e.key === '4') {
+        Array.from(selectedIndices).forEach(i => images[i].level = 'masterpiece');
+        images = [...images];
+      }
     }
   }
 
   onMount(() => {
-    // Check if we are the audience window
-    if (window.location.search.includes('audience=true')) {
-      isAudienceView = true;
-      document.title = "Presentation (Audience View)";
-      channel.onmessage = (e) => {
-        if (e.data.type === 'SYNC_STATE') {
-          scriptContent = e.data.script;
-          scenes = JSON.parse(scriptContent);
-          currentSceneIdx = e.data.sceneIdx;
-          currentStepIdx = e.data.stepIdx;
-          renderCurrentState();
-        }
-      };
-    } else {
-      parseScript();
-      
-      // Auto-parse on typing timeout (debounce)
-      let timeout;
-      const editor = document.getElementById('script-editor');
-      if (editor) {
-        editor.addEventListener('input', () => {
-          clearTimeout(timeout);
-          timeout = setTimeout(parseScript, 500);
-        });
-      }
-    }
-
-    // Keyboard navigation
-    window.addEventListener('keydown', (e) => {
-      // Chỉ khi đang focus vào presentation view hoặc presenter mode
-      if (e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
-        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') nextStep();
-        if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevStep();
-      }
-    });
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
   });
 
-  function startDualScreen() {
-    isPresenterMode = true;
-    window.open(window.location.pathname + '?audience=true', 'AudienceView', 'width=1280,height=720');
-    updateAudience();
-  }
+  $: filteredImages = images.filter(img => filterLevel === 'all' || img.level === filterLevel);
 
 </script>
 
-{#if isAudienceView}
-  <!-- Audience View (Fullscreen output) -->
-  <div class="w-screen h-screen overflow-hidden {scenes[currentSceneIdx]?.bg || 'bg-black'} relative transition-colors duration-1000">
-    {#each activeActors as actor (actor.id)}
-      {#if actor.type === 'text'}
-        <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{actor.content}</div>
-      {:else if actor.type === 'image'}
-        <img src={actor.src} alt="img" class="absolute {actor.class} {actor.enter} transition-all duration-700" />
-      {/if}
-    {/each}
-  </div>
+<div class="min-h-screen bg-zinc-950 text-white font-sans flex overflow-hidden">
+  
+  <!-- Sidebar -->
+  <aside class="w-64 bg-black/50 backdrop-blur-3xl border-r border-white/10 flex flex-col z-20">
+    <div class="p-6 border-b border-white/10 shrink-0">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-orange-500 flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.4)] mb-4">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+      </div>
+      <h1 class="text-xl font-bold tracking-tight">LinhHương Gallery</h1>
+      <p class="text-xs text-zinc-500 mt-1 font-medium">Smart AI Tagging Engine</p>
+    </div>
 
-{:else}
-  <!-- Presenter / Editor View -->
-  <div class="flex h-screen bg-slate-100 font-sans">
-    <!-- Left: LLM Script Editor -->
-    <div class="w-1/3 h-full border-r border-slate-300 bg-white flex flex-col shadow-xl z-10">
-      <div class="p-4 bg-slate-800 text-white flex justify-between items-center shrink-0">
-        <h2 class="font-bold text-lg flex items-center">
-          <span class="text-indigo-400 mr-2 text-xl">🎬</span>
-          Kịch bản Trình chiếu (JSON)
-        </h2>
+    <div class="p-4 flex-1 overflow-y-auto">
+      {#if !directoryHandle}
+        <button class="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-white/5 shadow-sm" on:click={loadFolder}>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+          Mở Thư Mục Ảnh
+        </button>
+      {:else}
+        <div class="mb-4">
+          <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 px-2">Bộ Lọc Thông Minh</div>
+          <div class="space-y-1">
+            <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors {filterLevel === 'all' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'all'}>
+              Tất cả ảnh ({images.length})
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'masterpiece' ? 'bg-amber-500/20 text-amber-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'masterpiece'}>
+              <span>Tuyệt đỉnh (4)</span>
+              <span class="text-amber-500">★</span>
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'keep' ? 'bg-emerald-500/20 text-emerald-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'keep'}>
+              <span>Ưng ý (3)</span>
+              <span class="text-emerald-500">✔</span>
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'neutral' ? 'bg-blue-500/10 text-blue-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'neutral'}>
+              <span>Thường (2)</span>
+              <span class="text-blue-400">-</span>
+            </button>
+            <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between {filterLevel === 'reject' ? 'bg-rose-500/10 text-rose-300' : 'text-zinc-400 hover:bg-white/5'}" on:click={() => filterLevel = 'reject'}>
+              <span>Loại bỏ (1)</span>
+              <span class="text-rose-500">✖</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3 bg-white/5 rounded-xl border border-white/10 text-xs text-zinc-400 leading-relaxed">
+          <strong class="text-white block mb-1">Phím tắt:</strong>
+          Click: Chọn ảnh<br>
+          Shift+Click: Chọn nhiều<br>
+          Phím 1-4: Gắn thẻ nhanh<br>
+          DoubleClick: Xem lớn
+        </div>
+      {/if}
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 relative bg-zinc-900/50 flex flex-col">
+    <!-- Mesh Background -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      <div class="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-rose-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
+      <div class="absolute bottom-[10%] left-[20%] w-[50%] h-[50%] bg-orange-600/10 rounded-full blur-[120px] mix-blend-screen"></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="h-16 border-b border-white/5 bg-black/20 backdrop-blur-xl flex items-center px-6 z-10 shrink-0">
+      {#if directoryHandle}
+        <div class="text-sm font-medium text-zinc-300">
+          <span class="text-white">{directoryHandle.name}</span> / {filteredImages.length} mục
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          {#if selectedIndices.size > 0}
+            <span class="text-xs font-bold text-zinc-500 mr-2">Đã chọn {selectedIndices.size} ảnh</span>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors" on:click={() => Array.from(selectedIndices).forEach(i => setLevel(images[i], 'masterpiece'))}>Set ★</button>
+            <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors" on:click={() => Array.from(selectedIndices).forEach(i => setLevel(images[i], 'keep'))}>Set ✔</button>
+          {/if}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Grid -->
+    <div class="flex-1 overflow-y-auto p-6 z-10 custom-scrollbar">
+      {#if !directoryHandle}
+        <div class="h-full flex flex-col items-center justify-center text-zinc-500">
+          <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <p class="text-lg">Chưa mở thư mục nào</p>
+        </div>
+      {:else}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 auto-rows-[200px]">
+          {#each filteredImages as img, i (img.id)}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div 
+              class="relative rounded-xl overflow-hidden cursor-pointer group select-none bg-black/40 border-2 transition-all duration-200 {selectedIndices.has(images.indexOf(img)) ? 'border-indigo-500 scale-[0.98]' : 'border-transparent hover:border-white/20'} {img.level === 'reject' ? 'opacity-30 grayscale' : ''} {img.level === 'masterpiece' ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-zinc-900' : ''} {img.level === 'keep' ? 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-zinc-900' : ''}"
+              on:click={(e) => toggleSelect(images.indexOf(img), e)}
+              on:dblclick={() => openLightbox(img)}
+            >
+              <img src={img.url} alt={img.name} class="w-full h-full object-cover pointer-events-none group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+              
+              <!-- Badges -->
+              <div class="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-amber-500 hover:text-black transition-colors {img.level === 'masterpiece' ? 'bg-amber-500 text-black opacity-100' : ''}" on:click={(e) => setLevel(img, 'masterpiece', e)} title="Tuyệt đỉnh">★</button>
+                <button class="w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-emerald-500 hover:text-black transition-colors {img.level === 'keep' ? 'bg-emerald-500 text-black opacity-100' : ''}" on:click={(e) => setLevel(img, 'keep', e)} title="Ưng ý">✔</button>
+                <button class="w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-rose-500 hover:text-black transition-colors {img.level === 'reject' ? 'bg-rose-500 text-black opacity-100' : ''}" on:click={(e) => setLevel(img, 'reject', e)} title="Loại bỏ">✖</button>
+              </div>
+
+              <!-- Name bar -->
+              <div class="absolute bottom-0 left-0 w-full p-2 bg-gradient-to-t from-black/80 to-transparent">
+                <p class="text-[10px] font-medium text-white/90 truncate">{img.name}</p>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </main>
+
+  <!-- Lightbox -->
+  {#if lightboxImage}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="fixed inset-0 z-50 bg-black/95 backdrop-blur-3xl flex flex-col" on:click={closeLightbox}>
+      <div class="h-16 flex items-center justify-between px-6 shrink-0 bg-gradient-to-b from-black/50 to-transparent">
+        <div class="text-sm font-bold text-white">{lightboxImage.name}</div>
+        <button class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors" on:click={closeLightbox}>
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
-      <div class="p-3 bg-indigo-50 text-indigo-800 text-xs border-b border-indigo-100">
-        Thiết kế theo chuẩn "Cinematic Scene". LLM chỉ cần tạo JSON với các Scene và Step. Mỗi Step chứa các đối tượng xuất hiện.
+      <div class="flex-1 p-8 flex items-center justify-center overflow-hidden">
+        <img src={lightboxImage.url} alt={lightboxImage.name} class="max-w-full max-h-full object-contain shadow-2xl" on:click|stopPropagation />
       </div>
-      <textarea
-        id="script-editor"
-        bind:value={scriptContent}
-        class="flex-1 w-full p-4 font-mono text-sm bg-slate-50 text-slate-800 outline-none resize-none focus:ring-inset focus:ring-2 focus:ring-indigo-500 transition-all"
-        spellcheck="false"
-      ></textarea>
       
-      <div class="p-4 bg-white border-t border-slate-200 shrink-0">
-        <button on:click={startDualScreen} class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 flex justify-center items-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-          Mở màn hình khán giả (Dual Screen)
+      <!-- Lightbox Controls -->
+      <div class="h-20 bg-gradient-to-t from-black/80 to-transparent flex items-center justify-center gap-4 shrink-0" on:click|stopPropagation>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'reject' ? 'bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'reject')}>
+          ✖ Loại (1)
+        </button>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'neutral' ? 'bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'neutral')}>
+          - Thường (2)
+        </button>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'keep' ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'keep')}>
+          ✔ Ưng ý (3)
+        </button>
+        <button class="px-6 py-2 rounded-full font-bold text-sm transition-colors {lightboxImage.level === 'masterpiece' ? 'bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.6)]' : 'bg-white/10 hover:bg-white/20 text-zinc-300'}" on:click={() => setLevel(lightboxImage, 'masterpiece')}>
+          ★ Tuyệt đỉnh (4)
         </button>
       </div>
     </div>
-
-    <!-- Right: Presenter Control & Preview -->
-    <div class="flex-1 flex flex-col h-full bg-slate-200">
-      <div class="p-4 bg-white border-b border-slate-300 flex justify-between items-center shadow-sm shrink-0">
-        <div class="font-bold text-slate-700 text-lg">Bảng điều khiển (Presenter)</div>
-        <div class="flex space-x-3 items-center">
-          <span class="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-            Scene {currentSceneIdx + 1}/{scenes.length} - Step {currentStepIdx + 1}/{scenes[currentSceneIdx]?.steps.length || 0}
-          </span>
-          <button on:click={prevStep} class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-colors">◀ Trước</button>
-          <button on:click={nextStep} class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-colors">Tiếp theo ▶</button>
-        </div>
-      </div>
-
-      <!-- Preview Window -->
-      <div class="flex-1 flex items-center justify-center p-8 overflow-hidden relative">
-        <div class="w-full max-w-5xl aspect-video bg-black shadow-2xl rounded-lg overflow-hidden relative ring-4 ring-slate-800/20 transform scale-95 origin-center transition-transform hover:scale-100 duration-500">
-          <div class="w-full h-full relative {scenes[currentSceneIdx]?.bg || 'bg-black'} transition-colors duration-1000">
-            {#each activeActors as actor (actor.id)}
-              {#if actor.type === 'text'}
-                <div class="absolute {actor.class} {actor.enter} transition-all duration-700">{actor.content}</div>
-              {:else if actor.type === 'image'}
-                <img src={actor.src} alt="img" class="absolute {actor.class} {actor.enter} transition-all duration-700" />
-              {/if}
-            {/each}
-          </div>
-        </div>
-      </div>
-      
-      <div class="p-4 text-center text-slate-500 text-sm">
-        Sử dụng <kbd class="px-2 py-1 bg-white border border-slate-300 rounded mx-1 font-mono">Space</kbd> hoặc Mũi tên để điều hướng kịch bản.
-      </div>
-    </div>
-  </div>
-{/if}
+  {/if}
+</div>
 
 <style>
-  :global(body) {
-    margin: 0;
-    overflow: hidden;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
   }
-  
-  /* --- Custom Animations --- */
-  :global(.animate-fade-in) {
-    animation: fadeIn 0.8s ease-out forwards;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
   }
-  :global(.animate-fade-in-up) {
-    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 20px;
   }
-  :global(.animate-slide-in-bottom) {
-    animation: slideInBottom 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  :global(.animate-slide-in-left) {
-    animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  :global(.animate-scale-in) {
-    animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
-  :global(.animate-float) {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes slideInBottom {
-    from { opacity: 0; transform: translateY(100%); }
-    to { opacity: 0.5; transform: translateY(0); }
-  }
-  @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-100px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.8); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  @keyframes float {
-    0% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(2deg); }
-    100% { transform: translateY(0px) rotate(0deg); }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255,255,255,0.2);
   }
 </style>
