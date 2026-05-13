@@ -10,6 +10,32 @@
   
   // UI State
   let isDragging = false;
+  let isExporting = false;
+  let exportProgress = 0;
+
+  async function exportImages() {
+    if (filteredImages.length === 0) return;
+    try {
+      const destDirHandle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+      isExporting = true;
+      exportProgress = 0;
+      for (let i = 0; i < filteredImages.length; i++) {
+        const img = filteredImages[i];
+        const newFileHandle = await destDirHandle.getFileHandle(img.name, { create: true });
+        const writable = await newFileHandle.createWritable();
+        await writable.write(img.file);
+        await writable.close();
+        exportProgress = Math.round(((i + 1) / filteredImages.length) * 100);
+      }
+      setTimeout(() => {
+        isExporting = false;
+        alert(`Đã xuất thành công ${filteredImages.length} ảnh sang thư mục mới!`);
+      }, 500);
+    } catch (e) {
+      console.error("Export failed:", e);
+      isExporting = false;
+    }
+  }
 
   async function loadFolder() {
     try {
@@ -219,11 +245,25 @@
         <div class="text-sm font-medium text-zinc-300">
           <span class="text-white">{directoryHandle.name}</span> / {filteredImages.length} mục
         </div>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="ml-auto flex items-center gap-4">
           {#if selectedIndices.size > 0}
-            <span class="text-xs font-bold text-zinc-500 mr-2">Đã chọn {selectedIndices.size} ảnh</span>
-            <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors" on:click={() => Array.from(selectedIndices).forEach(i => setLevel(images[i], 'masterpiece'))}>Set ★</button>
-            <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors" on:click={() => Array.from(selectedIndices).forEach(i => setLevel(images[i], 'keep'))}>Set ✔</button>
+            <div class="flex items-center gap-2 border-r border-white/10 pr-4">
+              <span class="text-xs font-bold text-zinc-500 mr-2">Đã chọn {selectedIndices.size} ảnh</span>
+              <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors" on:click={() => Array.from(selectedIndices).forEach(i => setLevel(images[i], 'masterpiece'))}>Set ★</button>
+              <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors" on:click={() => Array.from(selectedIndices).forEach(i => setLevel(images[i], 'keep'))}>Set ✔</button>
+            </div>
+          {/if}
+
+          {#if filteredImages.length > 0}
+            <button class="px-4 py-1.5 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" on:click={exportImages} disabled={isExporting}>
+              {#if isExporting}
+                <svg class="animate-spin -ml-1 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Đang copy... {exportProgress}%
+              {:else}
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                Copy {filteredImages.length} ảnh sang...
+              {/if}
+            </button>
           {/if}
         </div>
       {/if}
