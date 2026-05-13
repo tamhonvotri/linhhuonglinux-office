@@ -331,14 +331,20 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
       </div>
     </div>
 
-    <div class="flex-1 relative bg-zinc-950">
+    <div class="flex-1 relative bg-zinc-950/90 overflow-hidden">
+      <!-- Editor Mesh Background -->
+      <div class="absolute inset-0 pointer-events-none z-0">
+        <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 blur-[120px] rounded-full"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full"></div>
+      </div>
+
       <textarea
         bind:this={textareaElement}
         bind:value={codeInput}
         on:input={handleInput}
         on:keydown={handleKeydown}
         on:click={closeAutocomplete}
-        class="absolute inset-0 w-full h-full p-6 bg-transparent text-zinc-200 font-mono text-[15px] leading-loose resize-none outline-none custom-scrollbar selection:bg-indigo-500/30"
+        class="absolute inset-0 w-full h-full p-8 bg-transparent text-indigo-50 font-mono text-[16px] leading-loose resize-none outline-none custom-scrollbar selection:bg-indigo-500/50 z-10 drop-shadow-sm"
         spellcheck="false"
       ></textarea>
       
@@ -380,7 +386,7 @@ $ x = (-b +- sqrt(b^2 - 4 a c)) / (2 a) $
       {:else}
         <div class="w-full max-w-[21cm] min-h-[29.7cm] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.1)] p-12 transition-all">
           {#if mode === 'latex'}
-            <div id="preview-content" class="prose max-w-none prose-slate text-[12pt] font-serif">
+            <div id="preview-content" class="prose max-w-none text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black prose-code:text-indigo-600 text-[13pt] font-serif">
               {@html htmlOutput}
             </div>
           {:else}
